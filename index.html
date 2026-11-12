@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-AU">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<title>SpellQuest — Level up your spelling</title>
+<title>SpellQuest — Australian English</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;min-height:100%}
@@ -100,7 +100,6 @@
   .btn.danger{color:#fb7185}
   .btn:disabled{opacity:.45;pointer-events:none}
 
-  /* word source */
   .source-box{margin-bottom:22px}
   .filters{display:flex;gap:8px;margin-bottom:10px}
   .filter{flex:1;padding:10px;border-radius:12px;cursor:pointer;font-family:inherit;font-size:13px;
@@ -239,6 +238,16 @@
   .pip.bad{background:#fb7185}
   .cert-badge{font-size:13px;flex:0 0 auto;margin-left:2px}
 
+  /* TEACHER RULES SECTION */
+  .rule-card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);
+    border-radius:16px;padding:16px;margin-bottom:12px}
+  .rule-title{font-size:16px;font-weight:800;color:#eaeaff;margin:0 0 6px;display:flex;align-items:center;gap:8px}
+  .rule-desc{font-size:13px;color:#a8a8cc;margin:0 0 12px;line-height:1.5}
+  .rule-example{display:flex;gap:8px;margin-bottom:6px;font-size:13.5px;align-items:baseline}
+  .rule-aus{color:#34d399;font-weight:800;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .rule-us{color:#fb7185;text-decoration:line-through;font-family:ui-monospace,Menlo,Consolas,monospace;opacity:.8}
+  .rule-note{font-size:12px;color:#8f8fb8;margin-top:2px}
+
   .hist-card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);
     border-radius:15px;margin-bottom:9px;overflow:hidden;transition:border-color .15s}
   .hist-card[open]{border-color:rgba(124,92,255,.4)}
@@ -290,7 +299,6 @@
   .banner{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:#fbbf24;
     padding:11px 14px;border-radius:13px;font-size:12.5px;font-weight:700;margin-bottom:14px;line-height:1.5}
 
-  /* AI loading overlay */
   #aiLoading{position:fixed;inset:0;z-index:9997;display:none;place-items:center;text-align:center;
     background:rgba(7,6,15,.86);backdrop-filter:blur(10px);color:#eaeaff;padding:24px}
   #aiLoading.show{display:grid}
@@ -330,7 +338,7 @@
     <section class="screen active" id="screen-home">
       <div class="hero">
         <h1>Spell<span class="grad">Quest</span></h1>
-        <p class="sub">Level up your spelling, one word at a time.</p>
+        <p class="sub">Level up your Australian spelling, one word at a time.</p>
       </div>
 
       <div id="speechWarn"></div>
@@ -354,9 +362,63 @@
       <h2 class="sec-title">Choose your mode</h2>
       <div class="modes" id="modes"></div>
 
+      <button class="btn ghost" id="teacherBtn" style="color:#fbbf24;border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.1)">🎓 Teacher: Spelling Rules</button>
       <button class="btn ghost" id="wordbookBtn">📖 Open Wordbook</button>
       <button class="btn ghost" id="progressBtn">📊 View Progress</button>
       <button class="btn ghost danger" id="resetBtn">Reset all progress</button>
+    </section>
+
+    <!-- NEW TEACHER SCREEN -->
+    <section class="screen" id="screen-teacher">
+      <div class="hero" style="padding-bottom:14px">
+        <h1 style="font-size:32px">Aussie Rules</h1>
+        <p class="sub">Master the spelling tricks for Australian workplaces.</p>
+      </div>
+      <div class="rule-card">
+        <h3 class="rule-title">🇦🇺 -ise (Not -ize)</h3>
+        <p class="rule-desc">Australian English uses <b>-ise</b> for most verbs. American English uses <b>-ize</b>.</p>
+        <div class="rule-example"><span class="rule-aus">organise</span> <span class="rule-us">organize</span></div>
+        <div class="rule-example"><span class="rule-aus">realise</span> <span class="rule-us">realize</span></div>
+        <div class="rule-example"><span class="rule-aus">apologise</span> <span class="rule-us">apologize</span></div>
+        <div class="rule-note">Memory trick: Think "S" for "Straya".</div>
+      </div>
+      <div class="rule-card">
+        <h3 class="rule-title">🇦🇺 -our (Not -or)</h3>
+        <p class="rule-desc">Most nouns ending in an "uh" sound use <b>-our</b> in Australia.</p>
+        <div class="rule-example"><span class="rule-aus">colour</span> <span class="rule-us">color</span></div>
+        <div class="rule-example"><span class="rule-aus">behaviour</span> <span class="rule-us">behavior</span></div>
+        <div class="rule-example"><span class="rule-aus">favour</span> <span class="rule-us">favor</span></div>
+        <div class="rule-note">Exceptions: It's "auctorial", "error", and "mirror".</div>
+      </div>
+      <div class="rule-card">
+        <h3 class="rule-title">🇦🇺 -re (Not -er)</h3>
+        <p class="rule-desc">Centre, theatre, metre. In Australia, we put the "r" before the "e" in these words.</p>
+        <div class="rule-example"><span class="rule-aus">centre</span> <span class="rule-us">center</span></div>
+        <div class="rule-example"><span class="rule-aus">theatre</span> <span class="rule-us">theater</span></div>
+        <div class="rule-example"><span class="rule-aus">metre</span> <span class="rule-us">meter</span></div>
+      </div>
+      <div class="rule-card">
+        <h3 class="rule-title">🇦🇺 -ce vs -se</h3>
+        <p class="rule-desc">This is a famous trap! In Australian English, the <b>noun</b> ends in <b>-ce</b>, but the <b>verb</b> ends in <b>-se</b>.</p>
+        <div class="rule-example"><span class="rule-aus">licence</span> (noun) vs <span class="rule-aus">license</span> (verb)</div>
+        <div class="rule-example"><span class="rule-aus">practice</span> (noun) vs <span class="rule-aus">practise</span> (verb)</div>
+        <div class="rule-note">Example: "I need a driver's <b>licence</b> to <b>license</b> this vehicle."</div>
+      </div>
+      <div class="rule-card">
+        <h3 class="rule-title">🇦🇺 -ogue (Not -og)</h3>
+        <p class="rule-desc">Australian English keeps the French "ue" at the end of these words.</p>
+        <div class="rule-example"><span class="rule-aus">catalogue</span> <span class="rule-us">catalog</span></div>
+        <div class="rule-example"><span class="rule-aus">dialogue</span> <span class="rule-us">dialog</span></div>
+        <div class="rule-example"><span class="rule-aus">analogue</span> <span class="rule-us">analog</span></div>
+      </div>
+      <div class="rule-card">
+        <h3 class="rule-title">🇦🇺 Double L</h3>
+        <p class="rule-desc">When adding a suffix like -ing or -ed, we double the L in Australia.</p>
+        <div class="rule-example"><span class="rule-aus">travelling</span> <span class="rule-us">traveling</span></div>
+        <div class="rule-example"><span class="rule-aus">cancelled</span> <span class="rule-us">canceled</span></div>
+        <div class="rule-example"><span class="rule-aus">modelling</span> <span class="rule-us">modeling</span></div>
+      </div>
+      <button class="btn ghost" id="backHomeFromTeacher" style="margin-top:20px">🏠 Back home</button>
     </section>
 
     <section class="screen" id="screen-game">
@@ -376,7 +438,7 @@
 
       <div class="answer-row">
         <input id="answerInput" type="text" placeholder="Type the word…"
-               autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+               autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false">
         <button id="submitBtn">Check</button>
       </div>
 
@@ -452,9 +514,10 @@
 
 <script>
 /* ==========================================================================
-   1. LOCAL FALLBACK WORDS (used if AI is off or unavailable)
+   1. LOCAL FALLBACK WORDS (Australian English)
    ========================================================================== */
 const WORDS = [
+  /* ---------- TIER 1 : everyday words ---------- */
   {w:"friend",d:"a person you like and know well",s:"She's been my best ___ since school.",t:1},
   {w:"because",d:"for the reason that",s:"I was late ___ the bus broke down.",t:1},
   {w:"people",d:"more than one person",s:"Lots of ___ came to the meeting.",t:1},
@@ -486,6 +549,7 @@ const WORDS = [
   {w:"there",d:"in that place",s:"Put the box over ___.",t:1},
   {w:"where",d:"in or to what place",s:"___ is the meeting room?",t:1},
 
+  /* ---------- TIER 2 : desk-job vocabulary (AU) ---------- */
   {w:"colleague",d:"a person you work with",s:"My ___ is on holiday this week.",t:2},
   {w:"schedule",d:"a plan of times and events",s:"Let's check the ___ first.",t:2},
   {w:"appointment",d:"a meeting at a fixed time",s:"I have a dentist ___ at 3.",t:2},
@@ -516,7 +580,15 @@ const WORDS = [
   {w:"opportunity",d:"a chance to do something",s:"This is a great ___.",t:2},
   {w:"confidence",d:"belief in your own ability",s:"Practice builds ___.",t:2},
   {w:"knowledge",d:"the information you know",s:"___ is power.",t:2},
+  {w:"organise",d:"to arrange or plan something",s:"I need to ___ the meeting.",t:2},
+  {w:"colour",d:"red, blue, green, etc.",s:"What ___ is the logo?",t:2},
+  {w:"centre",d:"the middle point",s:"The conference ___ is downtown.",t:2},
+  {w:"behaviour",d:"the way someone acts",s:"His ___ in the meeting was odd.",t:2},
+  {w:"realise",d:"to become aware of something",s:"I didn't ___ it was due today.",t:2},
+  {w:"licence",d:"a permit to do something",s:"Do you have a driver's ___?",t:2},
+  {w:"favour",d:"an act of kindness",s:"Could you do me a ___?",t:2},
 
+  /* ---------- TIER 3 : commonly misspelled (AU) ---------- */
   {w:"definitely",d:"certainly; without doubt",s:"I'll ___ be there at eight.",t:3},
   {w:"separate",d:"apart from each other",s:"Keep the two lists ___.",t:3},
   {w:"necessary",d:"needed; required",s:"It's ___ to bring photo ID.",t:3},
@@ -547,7 +619,17 @@ const WORDS = [
   {w:"questionnaire",d:"a form full of questions",s:"Please fill out the ___.",t:3},
   {w:"conscientious",d:"careful and thorough",s:"She's a ___ worker.",t:3},
   {w:"sincerely",d:"honestly; used to end letters",s:"Yours ___, Alex.",t:3},
+  {w:"apologise",d:"to say sorry",s:"We ___ for the delay.",t:3},
+  {w:"enrolment",d:"the act of signing up",s:"___ closes on Friday.",t:3},
+  {w:"catalogue",d:"a list of items",s:"Check the new product ___.",t:3},
+  {w:"recognise",d:"to know who someone is",s:"I didn't ___ him with a beard.",t:3},
+  {w:"theatre",d:"a place to watch plays",s:"We went to the ___.",t:3},
+  {w:"travelling",d:"going from one place to another",s:"I love ___ for work.",t:3},
+  {w:"cancelled",d:"called off",s:"The flight was ___.",t:3},
+  {w:"dialogue",d:"a conversation",s:"Open a ___ with the client.",t:3},
+  {w:"jewellery",d:"rings and necklaces",s:"She wore beautiful ___.",t:3},
 
+  /* ---------- TIER 4 : boss words ---------- */
   {w:"entrepreneur",d:"someone who starts a business",s:"A young ___ founded the company.",t:4},
   {w:"liaison",d:"a link between two groups",s:"She's our ___ with the client.",t:4},
   {w:"noticeable",d:"easy to see or notice",s:"There's a ___ difference now.",t:4},
@@ -579,7 +661,7 @@ const TIER_NAMES = {1:"Starter Words", 2:"Workplace Words", 3:"Tricky Words", 4:
 /* ==========================================================================
    2. STATE + SAVE
    ========================================================================== */
-const SAVE_KEY = "spellquest_v2";
+const SAVE_KEY = "spellquest_au_v1";
 const clone = o => JSON.parse(JSON.stringify(o));
 const DEFAULT_STATE = {
   xp: 0, streak: 0, lastDay: null, sound: true,
@@ -587,10 +669,9 @@ const DEFAULT_STATE = {
   certified: {},
   history: [],
   stats: { correct: 0, attempts: 0, bestCombo: 0 },
-  // NEW for AI feature:
-  wordSource: "local",   // "local" | "ai"
-  aiPacks: {},           // tier -> { words:[...], createdAt }
-  aiWordBank: {},        // word -> {w,d,s,t,source:"ai",addedAt}
+  wordSource: "local",
+  aiPacks: {},
+  aiWordBank: {},
 };
 
 function load(){
@@ -626,7 +707,6 @@ const reviewCount = () => allWordsPool().filter(x => {
   const m = state.mastery[x.w]; return m && m.w > 0 && (m.s||0) < 3;
 }).length;
 
-// All words the app knows about (local + AI bank)
 function allWordsPool(){
   const map = new Map();
   WORDS.forEach(w => map.set(w.w, { ...w, t: w.t, source: "local" }));
@@ -636,7 +716,6 @@ function allWordsPool(){
   return Array.from(map.values());
 }
 
-// Weighted random sample, biased toward words you haven't mastered
 function weightedSample(pool, n){
   if(!pool.length) return [];
   const bag = pool.slice();
@@ -691,7 +770,7 @@ const sfx = {
 };
 
 /* ==========================================================================
-   4. SPEECH
+   4. SPEECH (Australian Voice Prioritised)
    ========================================================================== */
 const synth = window.speechSynthesis;
 let chosenVoice = null;
@@ -700,9 +779,13 @@ function pickVoice(){
   const vs = synth.getVoices();
   if(!vs.length) return;
   chosenVoice =
-    vs.find(v => /en-GB/i.test(v.lang) && /female|serena|kate|sonia|google uk/i.test(v.name)) ||
+    // Try to find an Australian voice first (Karen, Matilda, etc.)
+    vs.find(v => /en-AU/i.test(v.lang) && /female|karen|matilda|google au/i.test(v.name)) ||
+    vs.find(v => /en-AU/i.test(v.lang)) ||
+    // Fallback to UK voice
     vs.find(v => /en-GB/i.test(v.lang)) ||
-    vs.find(v => /en-US/i.test(v.lang) && /google|samantha|zira/i.test(v.name)) ||
+    // Fallback to US voice
+    vs.find(v => /en-US/i.test(v.lang)) ||
     vs.find(v => /^en/i.test(v.lang)) || vs[0];
 }
 if(synth){ pickVoice(); synth.onvoiceschanged = pickVoice; }
@@ -710,15 +793,13 @@ if(synth){ pickVoice(); synth.onvoiceschanged = pickVoice; }
 function speak(text, rate){
   if(!synth) return;
   try{
-    synth.cancel();
-    setTimeout(()=>{
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = rate || 0.8;
-      u.pitch = 1;
-      u.lang = (chosenVoice && chosenVoice.lang) || "en-GB";
-      if(chosenVoice) u.voice = chosenVoice;
-      synth.speak(u);
-    }, 60);
+    synth.cancel(); // Halt any queued audio immediately
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = rate || 0.8;
+    u.pitch = 1;
+    u.lang = (chosenVoice && chosenVoice.lang) || "en-AU";
+    if(chosenVoice) u.voice = chosenVoice;
+    synth.speak(u); // Speak synchronously without delay
   }catch(e){}
 }
 
@@ -766,10 +847,10 @@ function escapeHtml(s){
 }
 
 /* ==========================================================================
-   6. AI WORD PACKS  ← new
+   6. AI WORD PACKS
    ========================================================================== */
 const AI_PACK_SIZE = 20;
-const AI_PACK_TTL = 12 * 60 * 60 * 1000; // 12h
+const AI_PACK_TTL = 12 * 60 * 60 * 1000;
 let aiFetchBusy = false;
 
 function aiPackFresh(tier){
@@ -895,12 +976,10 @@ function renderHome(){
   $("#sStreak").textContent = state.streak || 0;
   updateHUD();
 
-  // Source chips
   document.querySelectorAll("[data-src]").forEach(btn => {
     btn.classList.toggle("on", btn.dataset.src === state.wordSource);
   });
 
-  // AI status banner
   const statusEl = $("#aiStatus");
   if(state.wordSource === "ai"){
     const packs = Object.keys(state.aiPacks);
@@ -926,7 +1005,6 @@ function renderHome(){
     statusEl.innerHTML = "";
   }
 
-  // Modes
   const wrap = $("#modes");
   wrap.innerHTML = "";
   MODES.forEach(m => {
@@ -980,7 +1058,6 @@ const MODE_CFG = {
   review:   { n:10, lives:Infinity, time:0  }
 };
 
-// Local-only round builder (original behaviour)
 function buildRoundSync(mode, n){
   const all = allWordsPool();
   if(mode === "mastery"){
@@ -999,7 +1076,6 @@ function buildRoundSync(mode, n){
   return weightedSample(pool, n);
 }
 
-// AI-aware round builder — fetches packs as needed, falls back to local on failure
 async function buildRoundAI(mode, n){
   const tiers = mode === "boss" ? [3,4] : mode === "blitz" ? [2,3] : [1,2];
   await ensureAIPools(tiers);
@@ -1009,7 +1085,7 @@ async function buildRoundAI(mode, n){
     const p = state.aiPacks[t];
     if(p && Array.isArray(p.words)) pool = pool.concat(p.words);
   });
-  if(pool.length < 6) return buildRoundSync(mode, n); // fallback if AI underdelivered
+  if(pool.length < 6) return buildRoundSync(mode, n);
   return weightedSample(pool, n);
 }
 
@@ -1129,8 +1205,10 @@ function nextWord(){
   }
 
   const inp = $("#answerInput");
-  inp.value = "";
   inp.disabled = false;
+  inp.value = "";
+  requestAnimationFrame(() => { inp.value = ""; });
+
   $("#submitBtn").disabled = false;
   $("#hintBtn").disabled = false;
   $("#skipBtn").disabled = false;
@@ -1164,6 +1242,8 @@ function submitAnswer(isTimeout){
 
   const correctWord = G.current.w;
   const raw = isTimeout ? "" : $("#answerInput").value;
+  $("#answerInput").value = ""; 
+
   const ok = normalize(raw) === normalize(correctWord);
 
   $("#answerInput").disabled = true;
@@ -1255,8 +1335,7 @@ function skipWord(){
   $("#feedback").innerHTML = `<div class="bad">⏭ Skipped</div><div class="ans">${w}</div>`;
   if(synth) speak(w, .7);
   save();
-  G.index++;
-  setTimeout(()=>{ if(G) nextWord(); }, 1400);
+  advance(1400); 
 }
 
 function useHint(){
@@ -1438,7 +1517,6 @@ function renderWordbook(){
     });
   });
 
-  // AI bank section
   const aiWords = Object.values(state.aiWordBank || {}).filter(matches);
   if(aiWords.length){
     html += `<div class="tier-h">✨ AI Words · ${aiWords.length}</div>`;
@@ -1523,6 +1601,9 @@ $("#soundBtn").addEventListener("click", () => {
   if(state.sound){ initAudio(); sfx.click(); }
 });
 
+$("#teacherBtn").addEventListener("click", () => { sfx.click(); showScreen("teacher"); });
+$("#backHomeFromTeacher").addEventListener("click", () => { sfx.click(); renderHome(); showScreen("home"); });
+
 $("#wordbookBtn").addEventListener("click", () => { sfx.click(); renderWordbook(); showScreen("words"); });
 $("#progressBtn").addEventListener("click", () => { sfx.click(); renderProgress(); showScreen("progress"); });
 $("#backHomeBtn").addEventListener("click", () => { sfx.click(); renderHome(); showScreen("home"); });
@@ -1574,6 +1655,7 @@ $("#submitBtn").addEventListener("click", () => submitAnswer(false));
 $("#answerInput").addEventListener("keydown", e => {
   if(e.key !== "Enter") return;
   e.preventDefault();
+  e.stopPropagation(); 
   if(!G) return;
   if(G.pendingAdvance){
     clearTimeout(advanceTimer);
