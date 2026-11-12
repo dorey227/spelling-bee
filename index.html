@@ -21,7 +21,6 @@
   }
   .wrap{max-width:720px;margin:0 auto;padding:14px 16px 70px}
 
-  /* ---------- HUD ---------- */
   .hud{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:8px 0 18px}
   .lvl{display:flex;align-items:center;gap:11px;flex:1;min-width:0}
   .lvl-badge{
@@ -49,12 +48,10 @@
   .icon-btn:hover{background:rgba(255,255,255,.14)}
   .icon-btn:active{transform:scale(.92)}
 
-  /* ---------- screens ---------- */
   .screen{display:none}
   .screen.active{display:block;animation:fadeUp .35s cubic-bezier(.22,1,.36,1)}
   @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
-  /* ---------- home ---------- */
   .hero{text-align:center;padding:12px 0 20px}
   .hero h1{font-size:clamp(38px,10vw,58px);margin:0;letter-spacing:-2px;font-weight:900;line-height:1}
   .hero h1 .grad{background:linear-gradient(120deg,#7c5cff,#22d3ee 55%,#34d399);
@@ -103,7 +100,15 @@
   .btn.danger{color:#fb7185}
   .btn:disabled{opacity:.45;pointer-events:none}
 
-  /* ---------- game ---------- */
+  /* word source */
+  .source-box{margin-bottom:22px}
+  .filters{display:flex;gap:8px;margin-bottom:10px}
+  .filter{flex:1;padding:10px;border-radius:12px;cursor:pointer;font-family:inherit;font-size:13px;
+    font-weight:800;color:#a8a8cc;background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.09);transition:.15s}
+  .filter.on{background:linear-gradient(135deg,#7c5cff,#5b3ee8);color:#fff;border-color:transparent;
+    box-shadow:0 8px 20px rgba(124,92,255,.32)}
+
   .game-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;min-height:30px}
   .hearts{font-size:16px;letter-spacing:2px}
   .heart{transition:transform .2s;display:inline-block}
@@ -184,7 +189,6 @@
   .feedback .you{font-size:13px;color:#8f8fb8;text-decoration:line-through}
   .feedback .bonus{font-size:12.5px;color:#fbbf24;font-weight:800}
 
-  /* ---------- results ---------- */
   .result-head{text-align:center;padding:18px 0 8px}
   .grade{
     width:112px;height:112px;border-radius:50%;margin:0 auto 16px;display:grid;place-items:center;
@@ -207,7 +211,6 @@
     letter-spacing:1px;color:#fff}
   .missed-item .d{font-size:12.5px;color:#9a9ac0;flex:1;min-width:0}
 
-  /* full round breakdown */
   .breakdown{display:grid;gap:6px;margin-bottom:20px}
   .bd-row{display:flex;align-items:center;gap:10px;padding:9px 13px;border-radius:12px;
     background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07)}
@@ -222,13 +225,6 @@
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
   .bd-typed s{color:#fb7185}
 
-  /* ---------- wordbook ---------- */
-  .filters{display:flex;gap:8px;margin-bottom:16px}
-  .filter{flex:1;padding:10px;border-radius:12px;cursor:pointer;font-family:inherit;font-size:13px;
-    font-weight:800;color:#a8a8cc;background:rgba(255,255,255,.05);
-    border:1px solid rgba(255,255,255,.09);transition:.15s}
-  .filter.on{background:linear-gradient(135deg,#7c5cff,#5b3ee8);color:#fff;border-color:transparent;
-    box-shadow:0 8px 20px rgba(124,92,255,.32)}
   .tier-h{font-size:12px;text-transform:uppercase;letter-spacing:1.3px;color:#8f8fb8;
     margin:22px 0 9px;font-weight:800}
   .word-row{display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:13px;
@@ -243,7 +239,6 @@
   .pip.bad{background:#fb7185}
   .cert-badge{font-size:13px;flex:0 0 auto;margin-left:2px}
 
-  /* ---------- progress / history ---------- */
   .hist-card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);
     border-radius:15px;margin-bottom:9px;overflow:hidden;transition:border-color .15s}
   .hist-card[open]{border-color:rgba(124,92,255,.4)}
@@ -263,7 +258,6 @@
   .hist-ans.ok{background:rgba(52,211,153,.13);color:#34d399}
   .hist-ans.bad{background:rgba(251,113,133,.13);color:#fb7185}
 
-  /* ---------- fx ---------- */
   #fx{position:fixed;inset:0;pointer-events:none;z-index:9998;overflow:hidden}
   .particle{position:fixed;border-radius:50%;animation:popOut .8s cubic-bezier(.15,.9,.3,1) forwards}
   @keyframes popOut{to{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
@@ -296,6 +290,17 @@
   .banner{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:#fbbf24;
     padding:11px 14px;border-radius:13px;font-size:12.5px;font-weight:700;margin-bottom:14px;line-height:1.5}
 
+  /* AI loading overlay */
+  #aiLoading{position:fixed;inset:0;z-index:9997;display:none;place-items:center;text-align:center;
+    background:rgba(7,6,15,.86);backdrop-filter:blur(10px);color:#eaeaff;padding:24px}
+  #aiLoading.show{display:grid}
+  .spinner{width:56px;height:56px;border-radius:50%;margin:0 auto 18px;
+    border:4px solid rgba(124,92,255,.2);border-top-color:#7c5cff;
+    animation:spin .9s linear infinite;box-shadow:0 0 30px rgba(124,92,255,.5)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #aiLoading .big{font-size:16px;font-weight:800;margin:0 0 6px}
+  #aiLoading .small{font-size:12.5px;color:#8f8fb8;margin:0;line-height:1.5}
+
   @media(max-width:420px){
     .stat-grid{grid-template-columns:repeat(2,1fr)}
     .answer-row{flex-direction:column}
@@ -322,7 +327,6 @@
   </header>
 
   <main>
-    <!-- ============ HOME ============ -->
     <section class="screen active" id="screen-home">
       <div class="hero">
         <h1>Spell<span class="grad">Quest</span></h1>
@@ -338,6 +342,15 @@
         <div class="stat"><div class="v" id="sStreak">0</div><div class="k">Day streak</div></div>
       </div>
 
+      <div class="source-box">
+        <h2 class="sec-title">Word source</h2>
+        <div class="filters" id="sourceFilters">
+          <button class="filter" data-src="local">📚 Built-in</button>
+          <button class="filter" data-src="ai">✨ AI (DeepSeek)</button>
+        </div>
+        <div id="aiStatus"></div>
+      </div>
+
       <h2 class="sec-title">Choose your mode</h2>
       <div class="modes" id="modes"></div>
 
@@ -346,7 +359,6 @@
       <button class="btn ghost danger" id="resetBtn">Reset all progress</button>
     </section>
 
-    <!-- ============ GAME ============ -->
     <section class="screen" id="screen-game">
       <div class="game-top">
         <div class="hearts" id="hearts"></div>
@@ -377,12 +389,12 @@
       <div class="feedback" id="feedback"></div>
     </section>
 
-    <!-- ============ RESULTS ============ -->
     <section class="screen" id="screen-results">
       <div class="result-head">
         <div class="grade" id="grade">A</div>
         <h2 id="resultTitle">Nice work!</h2>
         <p id="resultSub">Here's how you did.</p>
+        <p id="resultSource" style="margin-top:8px;font-size:12px;color:#8f8fb8"></p>
       </div>
       <div class="res-stats">
         <div class="stat"><div class="v" id="rXP">0</div><div class="k">XP earned</div></div>
@@ -392,16 +404,16 @@
       <div id="missedSection"></div>
       <div id="answerBreakdown"></div>
       <button class="btn" id="playAgainBtn">Play again</button>
+      <button class="btn ghost" id="refreshFromResultsBtn" style="display:none">✨ Generate fresh AI words</button>
       <button class="btn ghost" id="reviewMissedBtn">🔁 Drill my mistakes</button>
       <button class="btn ghost" id="progressFromResultsBtn">📊 View progress</button>
       <button class="btn ghost" id="homeBtn">🏠 Back home</button>
     </section>
 
-    <!-- ============ WORDBOOK ============ -->
     <section class="screen" id="screen-words">
       <div class="hero" style="padding-bottom:14px">
         <h1 style="font-size:32px">Wordbook</h1>
-        <p class="sub">Every word in the game. 3 green dots = mastered. 🎓 = certified.</p>
+        <p class="sub">Every word you've played. 3 green dots = mastered. 🎓 = certified.</p>
       </div>
       <div class="filters">
         <button class="filter on" data-f="all">All</button>
@@ -412,7 +424,6 @@
       <button class="btn ghost" id="backHomeBtn" style="margin-top:20px">🏠 Back home</button>
     </section>
 
-    <!-- ============ PROGRESS ============ -->
     <section class="screen" id="screen-progress">
       <div class="hero" style="padding-bottom:14px">
         <h1 style="font-size:32px">Progress</h1>
@@ -433,12 +444,17 @@
   <div class="rank" id="luRank">Word Scout</div>
 </div></div>
 
+<div id="aiLoading"><div>
+  <div class="spinner"></div>
+  <p class="big">✨ Asking DeepSeek for fresh words…</p>
+  <p class="small">First time per difficulty can take a few seconds.<br>Results are cached so later rounds are instant.</p>
+</div></div>
+
 <script>
 /* ==========================================================================
-   1. WORD DATA
+   1. LOCAL FALLBACK WORDS (used if AI is off or unavailable)
    ========================================================================== */
 const WORDS = [
-  /* ---------- TIER 1 : everyday words ---------- */
   {w:"friend",d:"a person you like and know well",s:"She's been my best ___ since school.",t:1},
   {w:"because",d:"for the reason that",s:"I was late ___ the bus broke down.",t:1},
   {w:"people",d:"more than one person",s:"Lots of ___ came to the meeting.",t:1},
@@ -470,7 +486,6 @@ const WORDS = [
   {w:"there",d:"in that place",s:"Put the box over ___.",t:1},
   {w:"where",d:"in or to what place",s:"___ is the meeting room?",t:1},
 
-  /* ---------- TIER 2 : desk-job vocabulary ---------- */
   {w:"colleague",d:"a person you work with",s:"My ___ is on holiday this week.",t:2},
   {w:"schedule",d:"a plan of times and events",s:"Let's check the ___ first.",t:2},
   {w:"appointment",d:"a meeting at a fixed time",s:"I have a dentist ___ at 3.",t:2},
@@ -502,7 +517,6 @@ const WORDS = [
   {w:"confidence",d:"belief in your own ability",s:"Practice builds ___.",t:2},
   {w:"knowledge",d:"the information you know",s:"___ is power.",t:2},
 
-  /* ---------- TIER 3 : commonly misspelled ---------- */
   {w:"definitely",d:"certainly; without doubt",s:"I'll ___ be there at eight.",t:3},
   {w:"separate",d:"apart from each other",s:"Keep the two lists ___.",t:3},
   {w:"necessary",d:"needed; required",s:"It's ___ to bring photo ID.",t:3},
@@ -534,7 +548,6 @@ const WORDS = [
   {w:"conscientious",d:"careful and thorough",s:"She's a ___ worker.",t:3},
   {w:"sincerely",d:"honestly; used to end letters",s:"Yours ___, Alex.",t:3},
 
-  /* ---------- TIER 4 : boss words ---------- */
   {w:"entrepreneur",d:"someone who starts a business",s:"A young ___ founded the company.",t:4},
   {w:"liaison",d:"a link between two groups",s:"She's our ___ with the client.",t:4},
   {w:"noticeable",d:"easy to see or notice",s:"There's a ___ difference now.",t:4},
@@ -566,24 +579,30 @@ const TIER_NAMES = {1:"Starter Words", 2:"Workplace Words", 3:"Tricky Words", 4:
 /* ==========================================================================
    2. STATE + SAVE
    ========================================================================== */
-const SAVE_KEY = "spellquest_v1";
+const SAVE_KEY = "spellquest_v2";
 const clone = o => JSON.parse(JSON.stringify(o));
 const DEFAULT_STATE = {
   xp: 0, streak: 0, lastDay: null, sound: true,
-  mastery: {},                       // word -> {s: streak, w: wrong, c: correct}
-  certified: {},                     // word -> ISO date certified
-  history: [],                       // PERMANENT round log
-  stats: { correct: 0, attempts: 0, bestCombo: 0 }
+  mastery: {},
+  certified: {},
+  history: [],
+  stats: { correct: 0, attempts: 0, bestCombo: 0 },
+  // NEW for AI feature:
+  wordSource: "local",   // "local" | "ai"
+  aiPacks: {},           // tier -> { words:[...], createdAt }
+  aiWordBank: {},        // word -> {w,d,s,t,source:"ai",addedAt}
 };
 
 function load(){
   try{
     const raw = localStorage.getItem(SAVE_KEY);
     if(!raw) return clone(DEFAULT_STATE);
-    const parsed = JSON.parse(raw);
-    const merged = Object.assign(clone(DEFAULT_STATE), parsed);
+    const merged = Object.assign(clone(DEFAULT_STATE), JSON.parse(raw));
     if(!Array.isArray(merged.history)) merged.history = [];
     if(!merged.certified) merged.certified = {};
+    if(!merged.aiPacks) merged.aiPacks = {};
+    if(!merged.aiWordBank) merged.aiWordBank = {};
+    if(merged.wordSource !== "ai") merged.wordSource = "local";
     return merged;
   }catch(e){ return clone(DEFAULT_STATE); }
 }
@@ -601,9 +620,37 @@ function levelInfo(xp){
 const rankFor = lvl => RANKS[Math.min(RANKS.length - 1, Math.floor((lvl - 1) / 2))];
 const masteryOf = w => state.mastery[w] || {s:0, w:0, c:0};
 const masteryScore = w => Math.min(1, (masteryOf(w).s || 0) / 3);
-const masteredCount = () => WORDS.filter(x => (masteryOf(x.w).s || 0) >= 3).length;
+const masteredCount = () => allWordsPool().filter(x => (masteryOf(x.w).s || 0) >= 3).length;
 const certifiedCount = () => Object.keys(state.certified || {}).length;
-const reviewCount = () => WORDS.filter(x => { const m = state.mastery[x.w]; return m && m.w > 0 && (m.s||0) < 3; }).length;
+const reviewCount = () => allWordsPool().filter(x => {
+  const m = state.mastery[x.w]; return m && m.w > 0 && (m.s||0) < 3;
+}).length;
+
+// All words the app knows about (local + AI bank)
+function allWordsPool(){
+  const map = new Map();
+  WORDS.forEach(w => map.set(w.w, { ...w, t: w.t, source: "local" }));
+  Object.values(state.aiWordBank || {}).forEach(w => {
+    if(!map.has(w.w)) map.set(w.w, { ...w, source: "ai" });
+  });
+  return Array.from(map.values());
+}
+
+// Weighted random sample, biased toward words you haven't mastered
+function weightedSample(pool, n){
+  if(!pool.length) return [];
+  const bag = pool.slice();
+  const picks = [];
+  const target = Math.min(n, bag.length);
+  while(picks.length < target && bag.length){
+    const weights = bag.map(w => 1 + (1 - masteryScore(w.w)) * 3 + ((w.t || 1) >= 3 ? .5 : 0));
+    const total = weights.reduce((a,b) => a+b, 0);
+    let r = Math.random() * total, idx = bag.length - 1;
+    for(let i=0;i<bag.length;i++){ r -= weights[i]; if(r <= 0){ idx = i; break; } }
+    picks.push(bag.splice(idx, 1)[0]);
+  }
+  return picks;
+}
 
 /* ==========================================================================
    3. SOUND
@@ -712,11 +759,78 @@ function toast(msg){
   t.textContent = msg;
   t.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>t.classList.remove("show"), 2100);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), 2400);
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 /* ==========================================================================
-   6. SCREENS + HUD
+   6. AI WORD PACKS  ← new
+   ========================================================================== */
+const AI_PACK_SIZE = 20;
+const AI_PACK_TTL = 12 * 60 * 60 * 1000; // 12h
+let aiFetchBusy = false;
+
+function aiPackFresh(tier){
+  const p = state.aiPacks[tier];
+  if(!p || !Array.isArray(p.words)) return false;
+  if(p.words.length < 6) return false;
+  if(Date.now() - (p.createdAt || 0) > AI_PACK_TTL) return false;
+  return true;
+}
+
+function pruneAIBank(max = 400){
+  const entries = Object.entries(state.aiWordBank).sort(
+    (a,b) => (a[1].addedAt || 0) - (b[1].addedAt || 0)
+  );
+  const excess = entries.length - max;
+  if(excess > 0) entries.slice(0, excess).forEach(([k]) => delete state.aiWordBank[k]);
+}
+
+async function fetchAIPack(tier, count = AI_PACK_SIZE){
+  const avoid = Object.keys(state.aiWordBank).slice(-80);
+  const r = await fetch("/api/generate-words", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tier, count, avoid }),
+  });
+  if(!r.ok){
+    let detail = "";
+    try { detail = (await r.json()).error || ""; } catch {}
+    throw new Error("HTTP " + r.status + (detail ? " — " + detail : ""));
+  }
+  const data = await r.json();
+  if(!data.words || !data.words.length) throw new Error("No words returned");
+
+  data.words.forEach(w => {
+    state.aiWordBank[w.w] = { ...w, source: "ai", addedAt: Date.now() };
+  });
+  pruneAIBank(400);
+  state.aiPacks[tier] = { words: data.words, createdAt: Date.now() };
+  save();
+  return data.words;
+}
+
+async function ensureAIPools(tiers){
+  if(aiFetchBusy) throw new Error("Another AI request is in flight");
+  aiFetchBusy = true;
+  try {
+    for(const t of tiers){
+      if(aiPackFresh(t)) continue;
+      await fetchAIPack(t);
+    }
+  } finally {
+    aiFetchBusy = false;
+  }
+}
+
+function showAILoading(on){
+  $("#aiLoading").classList.toggle("show", !!on);
+}
+
+/* ==========================================================================
+   7. SCREENS + HUD
    ========================================================================== */
 function showScreen(name){
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
@@ -752,7 +866,6 @@ function showLevelUp(lvl){
   sfx.level();
   setTimeout(()=>el.classList.remove("show"), 1950);
 }
-
 function touchStreak(){
   const today = new Date().toDateString();
   if(state.lastDay === today) return;
@@ -763,7 +876,7 @@ function touchStreak(){
 }
 
 /* ==========================================================================
-   7. HOME
+   8. HOME
    ========================================================================== */
 const MODES = [
   { id:"practice", ico:"🌱", name:"Practice",     desc:"No timer, no pressure. Learn the words properly." },
@@ -782,6 +895,38 @@ function renderHome(){
   $("#sStreak").textContent = state.streak || 0;
   updateHUD();
 
+  // Source chips
+  document.querySelectorAll("[data-src]").forEach(btn => {
+    btn.classList.toggle("on", btn.dataset.src === state.wordSource);
+  });
+
+  // AI status banner
+  const statusEl = $("#aiStatus");
+  if(state.wordSource === "ai"){
+    const packs = Object.keys(state.aiPacks);
+    const detail = packs.length
+      ? "Cached packs: " + packs.map(t => `T${t} × ${state.aiPacks[t].words.length}`).join(" · ")
+      : "No packs yet — your first AI round will generate them.";
+    const bank = Object.keys(state.aiWordBank).length;
+    statusEl.innerHTML = `
+      <div class="banner" style="background:rgba(34,211,238,.1);border-color:rgba(34,211,238,.3);color:#67e8f9">
+        ✨ AI mode active — words generated by DeepSeek (${bank} in bank).
+        <br><span style="opacity:.75;font-weight:600">${detail}</span>
+        <button class="ghost-btn" id="refreshAIBtn" style="margin-top:9px;width:100%">🔄 Clear packs &amp; generate fresh words</button>
+      </div>`;
+    const btn = $("#refreshAIBtn");
+    if(btn) btn.addEventListener("click", () => {
+      if(!confirm("Clear all cached AI word packs? Next round will ask DeepSeek for new words.")) return;
+      state.aiPacks = {};
+      save();
+      renderHome();
+      toast("AI packs cleared. New words on your next round.");
+    });
+  } else {
+    statusEl.innerHTML = "";
+  }
+
+  // Modes
   const wrap = $("#modes");
   wrap.innerHTML = "";
   MODES.forEach(m => {
@@ -797,12 +942,8 @@ function renderHome(){
     }
     if(m.id === "mastery"){
       const c = masteredCount();
-      if(c >= 6){
-        tag = `<span class="tag green">${c} ready</span>`;
-      } else {
-        tag = `<span class="tag locked">need 6</span>`;
-        locked = true;
-      }
+      if(c >= 6) tag = `<span class="tag green">${c} ready</span>`;
+      else { tag = `<span class="tag locked">need 6</span>`; locked = true; }
     }
 
     btn.innerHTML = `
@@ -821,11 +962,11 @@ function renderHome(){
   });
 
   $("#speechWarn").innerHTML = synth ? "" :
-    `<div class="banner">⚠️ Your browser doesn't support speech. The word will be shown briefly instead of spoken — use Chrome, Edge or Safari for the full experience. Mastery Test is unavailable.</div>`;
+    `<div class="banner">⚠️ Your browser doesn't support speech. Use Chrome, Edge or Safari for the full experience. Mastery Test is unavailable.</div>`;
 }
 
 /* ==========================================================================
-   8. GAME
+   9. GAME
    ========================================================================== */
 let G = null;
 let timerRAF = null;
@@ -839,41 +980,74 @@ const MODE_CFG = {
   review:   { n:10, lives:Infinity, time:0  }
 };
 
-function buildRound(mode, n){
-  let pool;
-  if(mode === "boss")         pool = WORDS.filter(w => w.t >= 3);
-  else if(mode === "blitz")   pool = WORDS.filter(w => w.t >= 2);
-  else if(mode === "mastery") pool = WORDS.filter(w => (masteryOf(w.w).s || 0) >= 3);
-  else if(mode === "review"){
-    pool = WORDS.filter(w => { const m = state.mastery[w.w]; return m && m.w > 0 && (m.s||0) < 3; });
-    if(pool.length < 6) pool = WORDS.filter(w => masteryScore(w.w) < 1);
-  } else pool = WORDS.slice();
-
-  if(pool.length < Math.min(6, n)) pool = WORDS.slice();
-
-  // Weighted sample — weak words come up more often
-  const bag = pool.slice(), picks = [];
-  const target = Math.min(n, bag.length);
-  while(picks.length < target && bag.length){
-    const weights = bag.map(w => 1 + (1 - masteryScore(w.w)) * 3 + (w.t >= 3 ? .5 : 0));
-    const total = weights.reduce((a,b) => a+b, 0);
-    let r = Math.random() * total, idx = bag.length - 1;
-    for(let i=0;i<bag.length;i++){ r -= weights[i]; if(r <= 0){ idx = i; break; } }
-    picks.push(bag.splice(idx, 1)[0]);
+// Local-only round builder (original behaviour)
+function buildRoundSync(mode, n){
+  const all = allWordsPool();
+  if(mode === "mastery"){
+    const pool = all.filter(w => (masteryOf(w.w).s || 0) >= 3);
+    return weightedSample(pool, n);
   }
-  return picks;
+  if(mode === "review"){
+    let pool = all.filter(w => { const m = state.mastery[w.w]; return m && m.w > 0 && (m.s||0) < 3; });
+    if(pool.length < 6) pool = all.filter(w => masteryScore(w.w) < 1);
+    if(pool.length < 6) pool = all.slice();
+    return weightedSample(pool, n);
+  }
+  const tiers = mode === "boss" ? [3,4] : mode === "blitz" ? [2,3] : [1,2];
+  let pool = all.filter(w => tiers.includes(w.t));
+  if(!pool.length) pool = all.slice();
+  return weightedSample(pool, n);
 }
 
-function startGame(mode){
+// AI-aware round builder — fetches packs as needed, falls back to local on failure
+async function buildRoundAI(mode, n){
+  const tiers = mode === "boss" ? [3,4] : mode === "blitz" ? [2,3] : [1,2];
+  await ensureAIPools(tiers);
+
+  let pool = [];
+  tiers.forEach(t => {
+    const p = state.aiPacks[t];
+    if(p && Array.isArray(p.words)) pool = pool.concat(p.words);
+  });
+  if(pool.length < 6) return buildRoundSync(mode, n); // fallback if AI underdelivered
+  return weightedSample(pool, n);
+}
+
+async function startGame(mode){
   if(mode === "mastery"){
     if(!synth){ toast("Mastery Test needs speech support (try Chrome/Edge)."); return; }
     if(masteredCount() < 6){ toast("Master at least 6 words first."); renderHome(); return; }
   }
+  if(mode === "review" && reviewCount() === 0){
+    toast("Nothing to review yet — play a round first!"); return;
+  }
+
   const cfg = MODE_CFG[mode];
+  const useAI = state.wordSource === "ai" && mode !== "mastery" && mode !== "review";
+
+  let queue;
+  if(useAI){
+    showAILoading(true);
+    try {
+      queue = await buildRoundAI(mode, cfg.n);
+    } catch(e){
+      console.warn("AI round failed:", e);
+      queue = buildRoundSync(mode, cfg.n);
+      toast("AI unavailable — using built-in words");
+    } finally {
+      showAILoading(false);
+    }
+  } else {
+    queue = buildRoundSync(mode, cfg.n);
+  }
+  if(!queue || !queue.length){
+    queue = buildRoundSync("practice", 10);
+  }
+
   touchStreak();
   G = {
-    mode, cfg,
-    queue: buildRound(mode, cfg.n),
+    mode, cfg, source: state.wordSource,
+    queue,
     index: 0, lives: cfg.lives, combo: 0, bestCombo: 0,
     correct: 0, attempts: 0, xpEarned: 0,
     missed: [], answers: [],
@@ -980,7 +1154,6 @@ function onTimeout(){
   sfx.wrong();
   submitAnswer(true);
 }
-
 function normalize(s){ return s.toLowerCase().replace(/\s+/g, " ").trim(); }
 
 function submitAnswer(isTimeout){
@@ -1098,7 +1271,7 @@ function useHint(){
 }
 
 /* ==========================================================================
-   9. END OF ROUND (with mastery logic + permanent history)
+   10. END OF ROUND
    ========================================================================== */
 function endGame(){
   cancelAnimationFrame(timerRAF);
@@ -1109,11 +1282,9 @@ function endGame(){
   const isMastery = !!G.cfg.mastery;
   const passMark = G.cfg.passMark || 80;
 
-  // Apply mastery-test results
   let newlyCertified = [];
   if(isMastery){
     if(acc >= passMark){
-      // PASS — certify every word answered correctly
       G.answers.forEach(a => {
         if(a.ok && !state.certified[a.word]){
           state.certified[a.word] = new Date().toISOString();
@@ -1121,7 +1292,6 @@ function endGame(){
         }
       });
     } else {
-      // FAIL — missed words drop back to learning
       G.missed.forEach(w => {
         const m = state.mastery[w];
         if(m) m.s = 1;
@@ -1131,11 +1301,11 @@ function endGame(){
 
   state.stats.bestCombo = Math.max(state.stats.bestCombo || 0, G.bestCombo);
 
-  // Build permanent history entry BEFORE nulling G
   const entry = {
     id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
     date: new Date().toISOString(),
     mode: G.mode,
+    source: G.source || "local",
     correct: G.correct,
     attempts: G.attempts,
     accuracy: acc,
@@ -1149,7 +1319,6 @@ function endGame(){
   state.history.push(entry);
   save();
 
-  // Grade / title
   let grade, title, sub;
   if(isMastery){
     if(acc >= passMark){
@@ -1162,9 +1331,8 @@ function endGame(){
       grade = "📘"; title = "Not yet";
       sub = `You need ${passMark}% to pass. Missed words are back in your learning pool.`;
     }
-  } else if(G.lives <= 0){
-    grade = "💔"; title = "Out of lives!"; sub = "You'll get them next time — review the words below.";
-  } else if(acc >= 95){ grade = "S"; title = "Flawless!"; sub = "Practically a dictionary."; }
+  } else if(G.lives <= 0){ grade = "💔"; title = "Out of lives!"; sub = "You'll get them next time — review the words below."; }
+  else if(acc >= 95){ grade = "S"; title = "Flawless!"; sub = "Practically a dictionary."; }
   else if(acc >= 85){ grade = "A"; title = "Excellent!"; sub = "Your spelling is getting sharp."; }
   else if(acc >= 70){ grade = "B"; title = "Nice work!"; sub = "Solid round — a few words to lock in."; }
   else if(acc >= 50){ grade = "C"; title = "Good effort"; sub = "Every mistake is a word you're about to learn."; }
@@ -1173,17 +1341,19 @@ function endGame(){
   $("#grade").textContent = grade;
   $("#resultTitle").textContent = title;
   $("#resultSub").textContent = sub;
+  $("#resultSource").textContent = isMastery
+    ? "Certification test — words from your mastered pool."
+    : (G.source === "ai" ? "✨ Words generated by DeepSeek AI" : "📚 Built-in word pack");
   $("#rXP").textContent = G.xpEarned;
   $("#rAcc").textContent = acc + "%";
   $("#rCombo").textContent = G.bestCombo;
 
-  // Missed section
   const ms = $("#missedSection");
   if(G.missed.length){
     ms.innerHTML = `<h2 class="sec-title">Words to review (${G.missed.length})</h2>
       <div class="missed-list">` +
       G.missed.map(w => {
-        const obj = WORDS.find(x => x.w === w);
+        const obj = allWordsPool().find(x => x.w === w);
         return `<div class="missed-item"><span class="w">${w}</span><span class="d">${obj ? obj.d : ""}</span></div>`;
       }).join("") + `</div>`;
   } else {
@@ -1191,7 +1361,6 @@ function endGame(){
       🎉 Perfect round — no mistakes to review!</div>`;
   }
 
-  // Full answer breakdown
   const ab = $("#answerBreakdown");
   if(G.answers.length){
     ab.innerHTML = `<h2 class="sec-title">Full breakdown — every question</h2>
@@ -1213,68 +1382,93 @@ function endGame(){
   }
 
   $("#reviewMissedBtn").style.display = G.missed.length ? "block" : "none";
+  const wasAISource = G.source === "ai" && !isMastery;
+  $("#refreshFromResultsBtn").style.display = wasAISource ? "block" : "none";
 
   const lastMode = G.mode;
-  const hadMissed = G.missed.length > 0;
   G = null;
   showScreen("results");
+
   $("#playAgainBtn").onclick = () => { sfx.click(); startGame(lastMode); };
   $("#reviewMissedBtn").onclick = () => { sfx.click(); startGame("review"); };
-}
-
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  $("#refreshFromResultsBtn").onclick = async () => {
+    state.aiPacks = {};
+    save();
+    toast("Asking DeepSeek for new words…");
+    sfx.click();
+    startGame(lastMode);
+  };
 }
 
 /* ==========================================================================
-   10. WORDBOOK
+   11. WORDBOOK
    ========================================================================== */
 let wbFilter = "all";
+function masteryPips(w){
+  const m = masteryOf(w);
+  const s = m.s || 0;
+  let pips = "";
+  for(let i=0;i<3;i++){
+    pips += `<span class="pip ${i < s ? "on" : (m.w > 0 && i === 0 && s === 0 ? "bad" : "")}"></span>`;
+  }
+  return pips;
+}
 function renderWordbook(){
   const list = $("#wordList");
+  const cert = w => state.certified[w] ? `<span class="cert-badge" title="Certified">🎓</span>` : "";
+  const matches = w => {
+    const s = masteryOf(w.w).s || 0;
+    if(wbFilter === "mastered") return s >= 3;
+    if(wbFilter === "learning") return s < 3;
+    return true;
+  };
+
   let html = "";
   [1,2,3,4].forEach(t => {
-    const words = WORDS.filter(w => w.t === t).filter(w => {
-      const s = masteryOf(w.w).s || 0;
-      if(wbFilter === "mastered") return s >= 3;
-      if(wbFilter === "learning") return s < 3;
-      return true;
-    });
+    const words = WORDS.filter(w => w.t === t).filter(matches);
     if(!words.length) return;
     html += `<div class="tier-h">${TIER_NAMES[t]} · ${words.length}</div>`;
     words.forEach(w => {
-      const m = masteryOf(w.w);
-      const s = m.s || 0;
-      let pips = "";
-      for(let i=0;i<3;i++){
-        pips += `<span class="pip ${i < s ? "on" : (m.w > 0 && i === 0 && s === 0 ? "bad" : "")}"></span>`;
-      }
-      const cert = state.certified[w.w] ? `<span class="cert-badge" title="Certified">🎓</span>` : "";
       html += `<div class="word-row">
         <span class="w">${w.w}</span>
         <span class="d">${w.d}</span>
-        <span class="pips">${pips}</span>
-        ${cert}
+        <span class="pips">${masteryPips(w.w)}</span>
+        ${cert(w.w)}
       </div>`;
     });
   });
+
+  // AI bank section
+  const aiWords = Object.values(state.aiWordBank || {}).filter(matches);
+  if(aiWords.length){
+    html += `<div class="tier-h">✨ AI Words · ${aiWords.length}</div>`;
+    aiWords.forEach(w => {
+      html += `<div class="word-row">
+        <span class="w">${w.w}</span>
+        <span class="d">${w.d}</span>
+        <span class="pips">${masteryPips(w.w)}</span>
+        ${cert(w.w)}
+      </div>`;
+    });
+  }
+
   list.innerHTML = html || `<div class="banner">No words here yet. Play a round!</div>`;
 }
 
 /* ==========================================================================
-   11. PROGRESS / HISTORY
+   12. PROGRESS / HISTORY
    ========================================================================== */
 function renderProgress(){
-  // Summary stats
   const totalRounds = state.history.length;
   const totalCorrect = state.history.reduce((a,h) => a + h.correct, 0);
   const totalAttempts = state.history.reduce((a,h) => a + h.attempts, 0);
   const overallAcc = totalAttempts ? Math.round(totalCorrect / totalAttempts * 100) : 0;
+  const aiRounds = state.history.filter(h => h.source === "ai").length;
   $("#progressStats").innerHTML = `
     <div class="stat"><div class="v">${totalRounds}</div><div class="k">Rounds</div></div>
     <div class="stat"><div class="v">${overallAcc}%</div><div class="k">Overall acc.</div></div>
     <div class="stat"><div class="v">${masteredCount()}</div><div class="k">Mastered</div></div>
-    <div class="stat"><div class="v">${certifiedCount()}</div><div class="k">Certified</div></div>`;
+    <div class="stat"><div class="v">${aiRounds}</div><div class="k">AI rounds</div></div>`;
 
   const list = $("#historyList");
   if(!state.history.length){
@@ -1282,7 +1476,6 @@ function renderProgress(){
     return;
   }
 
-  // Newest first
   const items = state.history.slice().reverse();
   list.innerHTML = `<h2 class="sec-title">All rounds (${items.length})</h2>` + items.map(h => {
     const d = new Date(h.date);
@@ -1292,6 +1485,7 @@ function renderProgress(){
     const icon = mode ? mode.ico : "❓";
     const name = mode ? mode.name : h.mode;
     const passTag = h.pass === true ? " · 🎓 passed" : h.pass === false ? " · ✗ failed" : "";
+    const srcTag = h.source === "ai" ? " · ✨" : "";
     const accColor = h.accuracy >= 80 ? "#34d399" : h.accuracy >= 50 ? "#fbbf24" : "#fb7185";
 
     const answerChips = h.answers.map(a =>
@@ -1302,7 +1496,7 @@ function renderProgress(){
       <summary>
         <span class="hist-ico">${icon}</span>
         <span class="hist-main">
-          <span class="hist-mode">${name}${passTag}</span>
+          <span class="hist-mode">${name}${passTag}${srcTag}</span>
           <span class="hist-date">${dateStr}</span>
         </span>
         <span class="hist-acc" style="color:${accColor}">${h.accuracy}%</span>
@@ -1321,7 +1515,7 @@ function renderProgress(){
 }
 
 /* ==========================================================================
-   12. EVENT WIRING
+   13. EVENT WIRING
    ========================================================================== */
 $("#soundBtn").addEventListener("click", () => {
   state.sound = !state.sound;
@@ -1337,16 +1531,28 @@ $("#homeBtn").addEventListener("click", () => { sfx.click(); renderHome(); showS
 $("#progressFromResultsBtn").addEventListener("click", () => { sfx.click(); renderProgress(); showScreen("progress"); });
 
 $("#resetBtn").addEventListener("click", () => {
-  if(confirm("Reset ALL progress, mastery, certifications and permanent history? This cannot be undone.")){
+  if(confirm("Reset ALL progress, mastery, certifications, AI cache and permanent history? This cannot be undone.")){
     state = clone(DEFAULT_STATE);
     save(); renderHome(); updateHUD();
     toast("Progress reset. Fresh start! 🌱");
   }
 });
 
-document.querySelectorAll(".filter").forEach(btn => {
+document.querySelectorAll("[data-src]").forEach(btn => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".filter").forEach(b => b.classList.remove("on"));
+    state.wordSource = btn.dataset.src;
+    save();
+    renderHome();
+    sfx.click();
+    if(btn.dataset.src === "ai"){
+      toast("AI mode on — first round will fetch words from DeepSeek.");
+    }
+  });
+});
+
+document.querySelectorAll("[data-f]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("[data-f]").forEach(b => b.classList.remove("on"));
     btn.classList.add("on");
     wbFilter = btn.dataset.f;
     renderWordbook();
@@ -1391,7 +1597,7 @@ document.addEventListener("keydown", e => {
 document.addEventListener("pointerdown", initAudio, { once: true });
 
 /* ==========================================================================
-   13. INIT
+   14. INIT
    ========================================================================== */
 renderHome();
 updateHUD();
