@@ -1,4 +1,4 @@
-// api/generate-words.mjs
+// api/generate-words.js
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
   const key = process.env.DEEPSEEK_API_KEY;
@@ -8,25 +8,24 @@ export default async function handler(req, res) {
   const safeTier = Math.max(1, Math.min(4, Number(body.tier) || 1));
   const safeCount = Math.max(6, Math.min(30, Number(body.count) || 20));
   const isBilingual = !!body.bilingual;
-
-  const tierGuides = {
-    1: "common everyday words",
-    2: "professional workplace vocabulary",
-    3: "commonly misspelled words",
-    4: "harder words for confident spellers",
-  };
+  const industry = body.industry && body.industry !== "random" ? body.industry : null;
+  
+  // Massive avoid list built by frontend to stop repeats
+  const avoidList = Array.isArray(body.avoid) ? body.avoid.filter(x => typeof x === "string").slice(-300).join(", ") : "";
 
   const system = "You are a friendly English spelling coach for an adult in Australia. Use strictly Australian English. You only output valid JSON.";
   
+  let industryPrompt = industry ? `The words must be highly relevant to the "${industry}" industry.` : "Use general, common workplace words.";
+  
   let user = "";
   if (isBilingual) {
-    user = `Generate ${safeCount} English workplace words that have a clear Spanish translation (cognates or common office terms) for difficulty tier ${safeTier}.
+    user = `Generate ${safeCount} English workplace words that have a clear Spanish translation for difficulty tier ${safeTier}. ${industryPrompt}
 Return JSON: {"words":[{"w":"english_word","es":"Spanish translation","d":"Short English definition","s":"Example sentence with ___"}]}
-Rules: strictly Australian English spelling for 'w'. No duplicates. No markdown.`;
+CRITICAL RULE: Do NOT use any of these words: ${avoidList || "(none)"}. They are already known. You must find entirely new words.`;
   } else {
-    user = `Generate ${safeCount} Australian English words for difficulty tier ${safeTier}: ${tierGuides[safeTier]}.
+    user = `Generate ${safeCount} Australian English words for difficulty tier ${safeTier}. ${industryPrompt}
 Return JSON: {"words":[{"w":"word","d":"Short definition","s":"Example sentence with ___"}]}
-Rules: strictly Australian English. No duplicates. No markdown.`;
+CRITICAL RULE: Do NOT use any of these words: ${avoidList || "(none)"}. They are already known. You must find entirely new words.`;
   }
 
   try {
@@ -37,7 +36,7 @@ Rules: strictly Australian English. No duplicates. No markdown.`;
         model: "deepseek-chat",
         messages: [{ role: "system", content: system }, { role: "user", content: user }],
         response_format: { type: "json_object" },
-        temperature: 1.1,
+        temperature: 1.25,
         max_tokens: 2000,
       }),
     });
@@ -46,7 +45,6 @@ Rules: strictly Australian English. No duplicates. No markdown.`;
     const data = await r.json();
     const parsed = JSON.parse(data.choices[0].message.content);
     
-    // Sanitize
     const seen = new Set();
     const words = (parsed.words || [])
       .map(x => ({
