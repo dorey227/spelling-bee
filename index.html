@@ -261,7 +261,7 @@
 
 <div class="wrap">
   <header class="hud" style="position:relative">
-    <div class="version-tag" id="versionTag">v3.0.0</div>
+    <div class="version-tag" id="versionTag">v3.0.1</div>
     <div class="lvl">
       <div class="lvl-badge" id="lvlBadge">1</div>
       <div class="xp">
@@ -490,7 +490,7 @@
 /* ==========================================================================
    1. DATA & CONSTANTS
    ========================================================================== */
-const APP_VERSION = "3.0.0";
+const APP_VERSION = "3.0.1";
 const WORDS = [
   {w:"friend",d:"a person you like and know well",s:"She's been my best ___ since school.",t:1},
   {w:"because",d:"for the reason that",s:"I was late ___ the bus broke down.",t:1},
@@ -654,9 +654,9 @@ const SPANISH_WORDS = [
 ];
 
 /* ==========================================================================
-   2. STATE & STORAGE
+   2. STATE & STORAGE (WITH PERMANENT SAVE KEY & MIGRATION)
    ========================================================================== */
-const SAVE_KEY = "spellquest_au_v3";
+const PERMANENT_SAVE_KEY = "spellquest_master_save";
 const clone = o => JSON.parse(JSON.stringify(o));
 const DEFAULT_STATE = {
   xp: 0, streak: 0, lastDay: null, sound: true,
@@ -667,7 +667,22 @@ const DEFAULT_STATE = {
 
 function load(){
   try{
-    const raw = localStorage.getItem(SAVE_KEY);
+    // 1. Try to load the permanent save
+    let raw = localStorage.getItem(PERMANENT_SAVE_KEY);
+    
+    // 2. If it doesn't exist, check older version keys and migrate them!
+    if (!raw) {
+      const oldKeys = ["spellquest_au_v3", "spellquest_au_v2", "spellquest_au_v1", "spellquest_v2", "spellquest_v1"];
+      for (const oldKey of oldKeys) {
+        const oldData = localStorage.getItem(oldKey);
+        if (oldData) {
+          raw = oldData;
+          localStorage.setItem(PERMANENT_SAVE_KEY, raw);
+          break;
+        }
+      }
+    }
+
     if(!raw) return clone(DEFAULT_STATE);
     const merged = Object.assign(clone(DEFAULT_STATE), JSON.parse(raw));
     if(!Array.isArray(merged.history)) merged.history = [];
@@ -680,7 +695,7 @@ function load(){
   }catch(e){ return clone(DEFAULT_STATE); }
 }
 let state = load();
-function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){} }
+function save(){ try{ localStorage.setItem(PERMANENT_SAVE_KEY, JSON.stringify(state)); }catch(e){} }
 
 const RANKS = ["Rookie Speller","Word Scout","Letter Ninja","Spell Apprentice","Word Slinger","Grammar Knight","Spell Master","Lexicon Legend","Word Wizard","Grand Speller"];
 const TIER_NAMES = {1:"Starter", 2:"Workplace", 3:"Tricky", 4:"Boss"};
@@ -801,7 +816,6 @@ function aiPackFresh(tier, bilingual){
 }
 
 async function fetchAIPack(tier, count = AI_PACK_SIZE, bilingual = false){
-  // Get ALL words ever seen to avoid repeating them
   const avoid = Object.keys(state.mastery).concat(Object.keys(state.aiWordBank)).slice(-300);
   
   const r = await fetch("/api/generate-words", {
@@ -919,7 +933,6 @@ const MODE_CFG = {
 };
 
 function buildRoundSync(mode, n){
-  // Filter out Mastered words for standard modes!
   const filterMastered = (pool) => pool.filter(w => (masteryOf(w.w).s || 0) < 3);
 
   if(mode === "bilingual") return weightedSample(filterMastered(SPANISH_WORDS), n);
@@ -935,7 +948,6 @@ function buildRoundSync(mode, n){
   const tiers = mode === "boss" ? [3,4] : mode === "blitz" ? [2,3] : [1,2];
   let pool = filterMastered(all.filter(w => tiers.includes(w.t)));
   
-  // If they mastered everything in this tier, fallback to all words so it doesn't crash
   if(pool.length < 6) pool = all.filter(w => tiers.includes(w.t));
   if(pool.length < 6) pool = all;
   return weightedSample(pool, n);
@@ -953,7 +965,6 @@ async function buildRoundAI(mode, n){
     if(p && Array.isArray(p.words)) pool = pool.concat(p.words);
   });
   
-  // Filter out any words mastered
   pool = pool.filter(w => (masteryOf(w.w).s || 0) < 3);
   
   if(pool.length < 6) return buildRoundSync(mode, n);
