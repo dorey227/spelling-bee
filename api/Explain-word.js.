@@ -1,8 +1,9 @@
-// api/explain-word.mjs
+// api/explain-word.js
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+  
   const key = process.env.DEEPSEEK_API_KEY;
-  if (!key) return res.status(500).json({ error: "DEEPSEEK_API_KEY not set" });
+  if (!key) return res.status(500).json({ error: "API key not set in Vercel" });
 
   const { word } = req.body || {};
   if (!word) return res.status(400).json({ error: "Word required" });
@@ -15,22 +16,38 @@ Format exactly as: {"rule": "Short explanation...", "mnemonic": "Memory trick...
   try {
     const r = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+      headers: { 
+        "Content-Type": "application/json", 
+        "Authorization": `Bearer ${key}` 
+      },
       body: JSON.stringify({
         model: "deepseek-chat",
         messages: [{ role: "system", content: system }, { role: "user", content: user }],
-        response_format: { type: "json_object" },
         temperature: 0.7,
-        max_tokens: 150,
+        max_tokens: 200, // Increased slightly to ensure it doesn't cut off mid-JSON
       }),
     });
 
-    if (!r.ok) throw new Error("DeepSeek API error");
+    if (!r.ok) {
+      const errText = await r.text();
+      throw new Error(`DeepSeek error: ${r.status} - ${errText}`);
+    }
+    
     const data = await r.json();
-    const content = data.choices[0].message.content;
+    let content = data.choices[0].message.content;
+    
+    // Clean up potential markdown formatting from the AI
+    content = content.replace(/```json/g, "").replace(/```/g, "").trim();
+    
     const parsed = JSON.parse(content);
     return res.status(200).json(parsed);
+    
   } catch (e) {
-    return res.status(500).json({ error: "Failed to generate explanation", rule: "This is a commonly misspelled word.", mnemonic: "Break it into smaller chunks to remember it." });
+    console.error("API Error:", e.message);
+    // This sends the ACTUAL error back to the app so we can see it
+    return res.status(500).json({ 
+      rule: `Error: ${e.message}`, 
+      mnemonic: "Check your Vercel logs or API key." 
+    });
   }
 }
