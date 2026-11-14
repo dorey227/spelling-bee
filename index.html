@@ -21,7 +21,23 @@
   }
   .wrap{max-width:720px;margin:0 auto;padding:14px 16px 70px}
 
-  /* HUD & GENERAL STYLES */
+  /* FIXED BACK BUTTON & VERSION */
+  #globalBackBtn {
+    position:fixed; top:16px; right:16px; z-index:9999;
+    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
+    color:#fff; font-family:inherit; font-size:12px; font-weight:700;
+    padding:6px 12px; border-radius:20px; cursor:pointer;
+    backdrop-filter:blur(10px); transition:transform .15s, background .15s;
+    display:none; /* Hidden on home screen */
+  }
+  #globalBackBtn:hover{background:rgba(255,255,255,.2)}
+  #globalBackBtn:active{transform:scale(.95)}
+  .version-tag {
+    position:absolute; top:24px; left:16px; font-size:11px; font-weight:800;
+    color:#8f8fb8; letter-spacing:1px; background:rgba(255,255,255,.05);
+    padding:4px 8px; border-radius:8px;
+  }
+
   .hud{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:8px 0 18px}
   .lvl{display:flex;align-items:center;gap:11px;flex:1;min-width:0}
   .lvl-badge{width:46px;height:46px;flex:0 0 46px;border-radius:15px;display:grid;place-items:center;font-weight:800;font-size:19px;color:#fff;background:linear-gradient(145deg,#8b6bff,#5b3ee8);box-shadow:0 8px 22px rgba(124,92,255,.45), inset 0 1px 0 rgba(255,255,255,.35)}
@@ -51,7 +67,16 @@
   .stat .k{font-size:10.5px;color:#8f8fb8;text-transform:uppercase;letter-spacing:.7px;margin-top:3px;font-weight:700}
   .sec-title{font-size:13px;text-transform:uppercase;letter-spacing:1.4px;color:#8f8fb8;margin:0 0 12px;font-weight:800}
 
-  /* MODES & BUTTONS */
+  /* INDUSTRY SELECTOR */
+  .industry-box{background:rgba(34,211,238,.05);border:1px solid rgba(34,211,238,.2);border-radius:16px;padding:14px;margin-bottom:16px;display:none}
+  .industry-box.show{display:block}
+  .industry-label{font-size:12px;font-weight:800;color:#67e8f9;margin-bottom:8px;display:block}
+  .industry-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .ind-btn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#a8a8cc;padding:6px 10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+  .ind-btn.on{background:#22d3ee;color:#000;border-color:#22d3ee}
+  .ind-custom{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#fff;padding:10px;border-radius:10px;font-family:inherit;font-size:13px;outline:none}
+  .ind-custom:focus{border-color:#22d3ee}
+
   .modes{display:grid;gap:11px;margin-bottom:22px}
   .mode{display:flex;align-items:center;gap:14px;width:100%;text-align:left;cursor:pointer;background:linear-gradient(135deg,rgba(255,255,255,.085),rgba(255,255,255,.035));border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:16px 17px;color:#eaeaff;transition:transform .16s cubic-bezier(.22,1,.36,1),border-color .16s,box-shadow .16s;font-family:inherit}
   .mode:hover{transform:translateY(-2px);border-color:rgba(124,92,255,.6);box-shadow:0 14px 34px rgba(124,92,255,.22)}
@@ -181,7 +206,7 @@
   .hist-ans.bad{background:rgba(251,113,133,.13);color:#fb7185}
 
   /* FLOATING MODAL */
-  #wordModal{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;background:rgba(7,6,15,.85);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s ease}
+  #wordModal{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;background:rgba(7,6,15,.85);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s ease}
   #wordModal.open{opacity:1;pointer-events:auto}
   .modal-card{background:linear-gradient(150deg,#1a1738,#0f0d23);border:1px solid rgba(124,92,255,.4);border-radius:26px 26px 0 0;width:100%;max-width:720px;padding:24px 20px 32px;transform:translateY(100%);transition:transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);box-shadow:0 -10px 40px rgba(0,0,0,.5);text-align:center}
   #wordModal.open .modal-card{transform:translateY(0)}
@@ -232,8 +257,11 @@
 </head>
 <body>
 
+<button id="globalBackBtn" onclick="handleGlobalBack()">← Exit</button>
+
 <div class="wrap">
-  <header class="hud">
+  <header class="hud" style="position:relative">
+    <div class="version-tag" id="versionTag">v3.0.0</div>
     <div class="lvl">
       <div class="lvl-badge" id="lvlBadge">1</div>
       <div class="xp">
@@ -268,6 +296,20 @@
           <button class="filter" data-src="local">📚 Built-in</button>
           <button class="filter" data-src="ai">✨ AI (DeepSeek)</button>
         </div>
+        
+        <!-- INDUSTRY SELECTOR -->
+        <div class="industry-box" id="industryBox">
+          <label class="industry-label">🎯 Select Industry Focus</label>
+          <div class="industry-grid" id="industryGrid">
+            <button class="ind-btn on" data-ind="random">Random</button>
+            <button class="ind-btn" data-ind="business">Business</button>
+            <button class="ind-btn" data-ind="medical">Medical</button>
+            <button class="ind-btn" data-ind="accounting">Accounting</button>
+            <button class="ind-btn" data-ind="IT">IT / Tech</button>
+          </div>
+          <input type="text" class="ind-custom" id="indCustom" placeholder="Or type custom industry (e.g. Legal, Construction)..." maxlength="30">
+        </div>
+        
         <div id="aiStatus"></div>
       </div>
 
@@ -329,7 +371,6 @@
         <div class="rule-example"><span class="rule-aus">cancelled</span> <span class="rule-us">canceled</span></div>
         <div class="rule-example"><span class="rule-aus">modelling</span> <span class="rule-us">modeling</span></div>
       </div>
-      <button class="btn ghost" id="backHomeFromTeacher" style="margin-top:20px">🏠 Back home</button>
     </section>
 
     <!-- GAME -->
@@ -377,7 +418,6 @@
       <button class="btn ghost" id="refreshFromResultsBtn" style="display:none">✨ Generate fresh AI words</button>
       <button class="btn ghost" id="reviewMissedBtn">🔁 Drill my mistakes</button>
       <button class="btn ghost" id="progressFromResultsBtn">📊 View progress</button>
-      <button class="btn ghost" id="homeBtn">🏠 Back home</button>
     </section>
 
     <!-- WORDBOOK -->
@@ -392,7 +432,6 @@
         <button class="filter" data-f="mastered">Mastered</button>
       </div>
       <div id="wordList"></div>
-      <button class="btn ghost" id="backHomeBtn" style="margin-top:20px">🏠 Back home</button>
     </section>
 
     <!-- PROGRESS -->
@@ -403,7 +442,6 @@
       </div>
       <div class="stat-grid" id="progressStats"></div>
       <div id="historyList"></div>
-      <button class="btn ghost" id="backHomeFromProgress" style="margin-top:20px">🏠 Back home</button>
     </section>
   </main>
 </div>
@@ -450,10 +488,10 @@
 
 <script>
 /* ==========================================================================
-   1. LOCAL FALLBACK WORDS (Australian English + Spanish Hybrids)
+   1. DATA & CONSTANTS
    ========================================================================== */
+const APP_VERSION = "3.0.0";
 const WORDS = [
-  /* TIER 1 */
   {w:"friend",d:"a person you like and know well",s:"She's been my best ___ since school.",t:1},
   {w:"because",d:"for the reason that",s:"I was late ___ the bus broke down.",t:1},
   {w:"people",d:"more than one person",s:"Lots of ___ came to the meeting.",t:1},
@@ -485,7 +523,6 @@ const WORDS = [
   {w:"there",d:"in that place",s:"Put the box over ___.",t:1},
   {w:"where",d:"in or to what place",s:"___ is the meeting room?",t:1},
 
-  /* TIER 2 */
   {w:"colleague",d:"a person you work with",s:"My ___ is on holiday this week.",t:2},
   {w:"schedule",d:"a plan of times and events",s:"Let's check the ___ first.",t:2},
   {w:"appointment",d:"a meeting at a fixed time",s:"I have a dentist ___ at 3.",t:2},
@@ -524,7 +561,6 @@ const WORDS = [
   {w:"licence",d:"a permit to do something",s:"Do you have a driver's ___?",t:2},
   {w:"favour",d:"an act of kindness",s:"Could you do me a ___?",t:2},
 
-  /* TIER 3 */
   {w:"definitely",d:"certainly; without doubt",s:"I'll ___ be there at eight.",t:3},
   {w:"separate",d:"apart from each other",s:"Keep the two lists ___.",t:3},
   {w:"necessary",d:"needed; required",s:"It's ___ to bring photo ID.",t:3},
@@ -565,7 +601,6 @@ const WORDS = [
   {w:"dialogue",d:"a conversation",s:"Open a ___ with the client.",t:3},
   {w:"jewellery",d:"rings and necklaces",s:"She wore beautiful ___.",t:3},
 
-  /* TIER 4 */
   {w:"entrepreneur",d:"someone who starts a business",s:"A young ___ founded the company.",t:4},
   {w:"liaison",d:"a link between two groups",s:"She's our ___ with the client.",t:4},
   {w:"noticeable",d:"easy to see or notice",s:"There's a ___ difference now.",t:4},
@@ -592,7 +627,6 @@ const WORDS = [
   {w:"rhythm",d:"a regular repeated pattern",s:"Keep the same ___ when typing.",t:4}
 ];
 
-/* SPANISH HYBRID WORDS (Fallback if AI is off) */
 const SPANISH_WORDS = [
   {w:"restaurant", es:"El restaurante", d:"a place where you buy meals", s:"Let's try that new ___.", t:3},
   {w:"office", es:"La oficina", d:"a place where people work", s:"I'll be in the ___ until five.", t:2},
@@ -619,23 +653,16 @@ const SPANISH_WORDS = [
   {w:"favour", es:"El favor", d:"an act of kindness", s:"Could you do me a ___?", t:2}
 ];
 
-const TIER_NAMES = {1:"Starter Words", 2:"Workplace Words", 3:"Tricky Words", 4:"Boss Words"};
-
 /* ==========================================================================
-   2. STATE + SAVE
+   2. STATE & STORAGE
    ========================================================================== */
-const SAVE_KEY = "spellquest_au_v2";
+const SAVE_KEY = "spellquest_au_v3";
 const clone = o => JSON.parse(JSON.stringify(o));
 const DEFAULT_STATE = {
   xp: 0, streak: 0, lastDay: null, sound: true,
-  mastery: {},
-  certified: {},
-  history: [],
-  stats: { correct: 0, attempts: 0, bestCombo: 0 },
-  wordSource: "local",
-  aiPacks: {},
-  aiWordBank: {},
-  wordExplanations: {} // Caches AI explanations
+  mastery: {}, certified: {}, history: [], stats: { correct: 0, attempts: 0, bestCombo: 0 },
+  wordSource: "local", industry: "random", customIndustry: "",
+  aiPacks: {}, aiWordBank: {}, wordExplanations: {}
 };
 
 function load(){
@@ -656,20 +683,19 @@ let state = load();
 function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){} }
 
 const RANKS = ["Rookie Speller","Word Scout","Letter Ninja","Spell Apprentice","Word Slinger","Grammar Knight","Spell Master","Lexicon Legend","Word Wizard","Grand Speller"];
+const TIER_NAMES = {1:"Starter", 2:"Workplace", 3:"Tricky", 4:"Boss"};
+
 function levelInfo(xp){ let lvl = 1, need = 100, acc = 0; while (xp >= acc + need){ acc += need; lvl++; need = Math.round(need * 1.3); } return { lvl, acc, need, into: xp - acc }; }
 const rankFor = lvl => RANKS[Math.min(RANKS.length - 1, Math.floor((lvl - 1) / 2))];
 const masteryOf = w => state.mastery[w] || {s:0, w:0, c:0};
 const masteryScore = w => Math.min(1, (masteryOf(w).s || 0) / 3);
 const masteredCount = () => allWordsPool().filter(x => (masteryOf(x.w).s || 0) >= 3).length;
-const certifiedCount = () => Object.keys(state.certified || {}).length;
 const reviewCount = () => allWordsPool().filter(x => { const m = state.mastery[x.w]; return m && m.w > 0 && (m.s||0) < 3; }).length;
 
 function allWordsPool(){
   const map = new Map();
   WORDS.forEach(w => map.set(w.w, { ...w, source: "local" }));
-  Object.values(state.aiWordBank || {}).forEach(w => {
-    if(!map.has(w.w)) map.set(w.w, { ...w, source: "ai" });
-  });
+  Object.values(state.aiWordBank || {}).forEach(w => { if(!map.has(w.w)) map.set(w.w, { ...w, source: "ai" }); });
   return Array.from(map.values());
 }
 
@@ -692,8 +718,7 @@ function weightedSample(pool, n){
 let actx = null;
 function initAudio(){ if(!actx){ const AC = window.AudioContext || window.webkitAudioContext; if(AC) actx = new AC(); } if(actx && actx.state === "suspended") actx.resume(); }
 function tone(freq, delay, dur, type="sine", vol=0.15){
-  if(!state.sound) return;
-  initAudio(); if(!actx) return;
+  if(!state.sound) return; initAudio(); if(!actx) return;
   const t0 = actx.currentTime + delay; const o = actx.createOscillator(), g = actx.createGain();
   o.type = type; o.frequency.setValueAtTime(freq, t0);
   g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(vol, t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
@@ -711,25 +736,17 @@ const sfx = {
 const synth = window.speechSynthesis;
 let chosenVoice = null;
 function pickVoice(){
-  if(!synth) return;
-  const vs = synth.getVoices(); if(!vs.length) return;
+  if(!synth) return; const vs = synth.getVoices(); if(!vs.length) return;
   chosenVoice = vs.find(v => /en-AU/i.test(v.lang) && /female|karen|matilda|google au/i.test(v.name)) || vs.find(v => /en-AU/i.test(v.lang)) || vs.find(v => /en-GB/i.test(v.lang)) || vs.find(v => /en-US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || vs[0];
 }
 if(synth){ pickVoice(); synth.onvoiceschanged = pickVoice; }
-
 function speak(text, rate){
   if(!synth) return;
-  try{
-    synth.cancel(); 
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = rate || 0.8; u.pitch = 1; u.lang = (chosenVoice && chosenVoice.lang) || "en-AU";
-    if(chosenVoice) u.voice = chosenVoice;
-    synth.speak(u); 
-  }catch(e){}
+  try{ synth.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = rate || 0.8; u.pitch = 1; u.lang = (chosenVoice && chosenVoice.lang) || "en-AU"; if(chosenVoice) u.voice = chosenVoice; synth.speak(u); }catch(e){}
 }
 
 /* ==========================================================================
-   4. FX & UI HELPERS
+   4. FX & HELPERS
    ========================================================================== */
 const $ = s => document.querySelector(s);
 const fxLayer = $("#fx");
@@ -749,151 +766,71 @@ function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ==========================================================================
-   5. FLOATING CARD (EXPLANATIONS)
+   5. BACK BUTTON
    ========================================================================== */
-async function openWordModal(word){
-  sfx.click();
-  const modal = $("#wordModal");
-  const mWord = $("#mWord"), mDef = $("#mDef"), mRule = $("#mRule"), mMnemonic = $("#mMnemonic");
-  
-  // Find the word object
-  const obj = allWordsPool().find(x => x.w === word);
-  mWord.textContent = word;
-  mDef.textContent = obj ? obj.d : "Unknown word";
-  
-  // Setup speak button
-  $("#mSpeak").onclick = () => speak(word);
-  
-  // Open modal immediately with loading state
-  modal.classList.add("loading");
-  modal.classList.add("open");
-  
-  // Check cache
-  if(state.wordExplanations[word]){
-    mRule.textContent = state.wordExplanations[word].rule;
-    mMnemonic.textContent = state.wordExplanations[word].mnemonic;
-    modal.classList.remove("loading");
-    return;
+window.handleGlobalBack = function() {
+  if (G) {
+    if(confirm("Quit this round? Your progress in this test will be lost.")){
+      clearTimeout(advanceTimer); cancelAnimationFrame(timerRAF); G = null;
+      renderHome(); showScreen("home");
+    }
+  } else {
+    renderHome(); showScreen("home");
   }
-  
-  // Fetch from API
-  try {
-    const r = await fetch("/api/explain-word", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ word })
-    });
-    const data = await r.json();
-    
-    // Save to cache
-    state.wordExplanations[word] = data;
-    save();
-    
-    // Update UI
-    mRule.textContent = data.rule;
-    mMnemonic.textContent = data.mnemonic;
-  } catch(e) {
-    mRule.textContent = "Sorry, couldn't load the rule right now.";
-    mMnemonic.textContent = "Try breaking the word into smaller syllables!";
-  } finally {
-    modal.classList.remove("loading");
-  }
+};
+
+function showScreen(name){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  $("#screen-" + name).classList.add("active");
+  window.scrollTo({ top: 0 });
+  $("#globalBackBtn").style.display = (name === "home") ? "none" : "block";
 }
-$("#mClose").addEventListener("click", () => { sfx.click(); $("#wordModal").classList.remove("open"); });
-$("#wordModal").addEventListener("click", (e) => { if(e.target.id === "wordModal") $("#wordModal").classList.remove("open"); });
 
 /* ==========================================================================
-   6. AI WORD PACKS
+   6. AI WORD PACKS (STRICT AVOID)
    ========================================================================== */
 const AI_PACK_SIZE = 20;
 const AI_PACK_TTL = 12 * 60 * 60 * 1000;
 let aiFetchBusy = false;
 
 function aiPackFresh(tier, bilingual){
-  const key = bilingual ? `es_${tier}` : tier;
+  const key = `${state.industry}_${bilingual ? 'es_' : ''}${tier}`;
   const p = state.aiPacks[key];
   if(!p || !Array.isArray(p.words) || p.words.length < 6 || Date.now() - (p.createdAt || 0) > AI_PACK_TTL) return false;
   return true;
 }
 
-function pruneAIBank(max = 400){
-  const entries = Object.entries(state.aiWordBank).sort((a,b) => (a[1].addedAt || 0) - (b[1].addedAt || 0));
-  const excess = entries.length - max;
-  if(excess > 0) entries.slice(0, excess).forEach(([k]) => delete state.aiWordBank[k]);
-}
-
 async function fetchAIPack(tier, count = AI_PACK_SIZE, bilingual = false){
-  const avoid = Object.keys(state.aiWordBank).slice(-80);
+  // Get ALL words ever seen to avoid repeating them
+  const avoid = Object.keys(state.mastery).concat(Object.keys(state.aiWordBank)).slice(-300);
+  
   const r = await fetch("/api/generate-words", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tier, count, avoid, bilingual }),
+    body: JSON.stringify({ tier, count, avoid, bilingual, industry: state.industry || state.customIndustry }),
   });
   if(!r.ok) throw new Error("HTTP " + r.status);
   const data = await r.json();
   if(!data.words || !data.words.length) throw new Error("No words");
 
   data.words.forEach(w => { state.aiWordBank[w.w] = { ...w, source: "ai", addedAt: Date.now() }; });
-  pruneAIBank(400);
-  const key = bilingual ? `es_${tier}` : tier;
+  const key = `${state.industry}_${bilingual ? 'es_' : ''}${tier}`;
   state.aiPacks[key] = { words: data.words, createdAt: Date.now() };
   save();
   return data.words;
 }
 
 async function ensureAIPools(tiers, bilingual){
-  if(aiFetchBusy) throw new Error("Busy");
-  aiFetchBusy = true;
+  if(aiFetchBusy) throw new Error("Busy"); aiFetchBusy = true;
   try {
-    for(const t of tiers){
-      if(aiPackFresh(t, bilingual)) continue;
-      await fetchAIPack(t, AI_PACK_SIZE, bilingual);
-    }
+    for(const t of tiers){ if(!aiPackFresh(t, bilingual)) await fetchAIPack(t, AI_PACK_SIZE, bilingual); }
   } finally { aiFetchBusy = false; }
 }
-
 function showAILoading(on){ $("#aiLoading").classList.toggle("show", !!on); }
 
 /* ==========================================================================
-   7. SCREENS & HOME
+   7. HOME SCREEN & UI
    ========================================================================== */
-function showScreen(name){
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  $("#screen-" + name).classList.add("active");
-  window.scrollTo({ top: 0 });
-}
-
-function updateHUD(){
-  const info = levelInfo(state.xp);
-  $("#lvlBadge").textContent = info.lvl;
-  $("#rankName").textContent = rankFor(info.lvl);
-  $("#xpText").textContent = `${info.into} / ${info.need} XP`;
-  $("#xpFill").style.width = Math.min(100, (info.into / info.need) * 100) + "%";
-  $("#streakNum").textContent = state.streak || 0;
-  $("#soundBtn").textContent = state.sound ? "🔊" : "🔇";
-}
-
-function addXP(n){
-  const before = levelInfo(state.xp).lvl;
-  state.xp = Math.max(0, state.xp + n);
-  const after = levelInfo(state.xp).lvl;
-  updateHUD();
-  if(after > before) showLevelUp(after);
-  save();
-}
-function showLevelUp(lvl){
-  $("#luLevel").textContent = lvl;
-  $("#luRank").textContent = rankFor(lvl);
-  const el = $("#levelup"); el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
-  sfx.level(); setTimeout(()=>el.classList.remove("show"), 1950);
-}
-function touchStreak(){
-  const today = new Date().toDateString(); if(state.lastDay === today) return;
-  const yest = new Date(Date.now() - 86400000).toDateString();
-  state.streak = (state.lastDay === yest) ? (state.streak || 0) + 1 : 1;
-  state.lastDay = today; save();
-}
-
 const MODES = [
   { id:"practice", ico:"🌱", name:"Practice",     desc:"No timer, no pressure. Learn the words properly." },
   { id:"blitz",    ico:"⚡", name:"Blitz",        desc:"Beat the clock. Chain correct answers for combo XP." },
@@ -904,6 +841,7 @@ const MODES = [
 ];
 
 function renderHome(){
+  $("#versionTag").textContent = "v" + APP_VERSION;
   const info = levelInfo(state.xp);
   $("#sLevel").textContent = info.lvl;
   const acc = state.stats.attempts ? Math.round(state.stats.correct / state.stats.attempts * 100) : 0;
@@ -912,19 +850,20 @@ function renderHome(){
   $("#sStreak").textContent = state.streak || 0;
   updateHUD();
 
+  // Source toggles
   document.querySelectorAll("[data-src]").forEach(btn => { btn.classList.toggle("on", btn.dataset.src === state.wordSource); });
+  $("#industryBox").classList.toggle("show", state.wordSource === "ai");
 
-  const statusEl = $("#aiStatus");
+  // Industry logic
   if(state.wordSource === "ai"){
-    const bank = Object.keys(state.aiWordBank).length;
-    statusEl.innerHTML = `
-      <div class="banner" style="background:rgba(34,211,238,.1);border-color:rgba(34,211,238,.3);color:#67e8f9">
-        ✨ AI mode active — words generated by DeepSeek (${bank} in bank).
-        <button class="ghost-btn" id="refreshAIBtn" style="margin-top:9px;width:100%">🔄 Clear packs &amp; generate fresh</button>
-      </div>`;
-    $("#refreshAIBtn").addEventListener("click", () => { state.aiPacks = {}; save(); renderHome(); toast("AI packs cleared."); });
-  } else { statusEl.innerHTML = ""; }
+    document.querySelectorAll(".ind-btn").forEach(btn => { btn.classList.toggle("on", btn.dataset.ind === state.industry); });
+    $("#indCustom").value = state.customIndustry || "";
+    $("#aiStatus").innerHTML = `<div class="banner" style="background:rgba(34,211,238,.1);border-color:rgba(34,211,238,.3);color:#67e8f9">AI mode active. Customizing for: <b>${state.customIndustry || state.industry}</b></div>`;
+  } else {
+    $("#aiStatus").innerHTML = "";
+  }
 
+  // Modes
   const wrap = $("#modes"); wrap.innerHTML = "";
   MODES.forEach(m => {
     const btn = document.createElement("button"); btn.className = "mode";
@@ -941,35 +880,64 @@ function renderHome(){
     });
     wrap.appendChild(btn);
   });
-  $("#speechWarn").innerHTML = synth ? "" : `<div class="banner">⚠️ Your browser doesn't support speech. Use Chrome, Edge or Safari.</div>`;
+}
+
+function updateHUD(){
+  const info = levelInfo(state.xp);
+  $("#lvlBadge").textContent = info.lvl;
+  $("#rankName").textContent = rankFor(info.lvl);
+  $("#xpText").textContent = `${info.into} / ${info.need} XP`;
+  $("#xpFill").style.width = Math.min(100, (info.into / info.need) * 100) + "%";
+  $("#streakNum").textContent = state.streak || 0;
+  $("#soundBtn").textContent = state.sound ? "🔊" : "🔇";
+}
+
+function addXP(n){
+  const before = levelInfo(state.xp).lvl; state.xp = Math.max(0, state.xp + n); const after = levelInfo(state.xp).lvl;
+  updateHUD(); if(after > before) showLevelUp(after); save();
+}
+function showLevelUp(lvl){
+  $("#luLevel").textContent = lvl; $("#luRank").textContent = rankFor(lvl);
+  const el = $("#levelup"); el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  sfx.level(); setTimeout(()=>el.classList.remove("show"), 1950);
+}
+function touchStreak(){
+  const today = new Date().toDateString(); if(state.lastDay === today) return;
+  const yest = new Date(Date.now() - 86400000).toDateString();
+  state.streak = (state.lastDay === yest) ? (state.streak || 0) + 1 : 1;
+  state.lastDay = today; save();
 }
 
 /* ==========================================================================
-   8. GAME ENGINE
+   8. GAME LOGIC (STRICT MASTERY FILTER)
    ========================================================================== */
 let G = null, timerRAF = null, advanceTimer = null;
 const MODE_CFG = {
-  practice: { n:10, lives:Infinity, time:0 },
-  blitz:    { n:12, lives:3,        time:12 },
-  bilingual:{ n:10, lives:3,        time:0 },
-  boss:     { n:10, lives:3,        time:11 },
-  mastery:  { n:10, lives:Infinity, time:0, mastery:true, passMark:80 },
-  review:   { n:10, lives:Infinity, time:0 }
+  practice: { n:10, lives:Infinity, time:0 }, blitz: { n:12, lives:3, time:12 },
+  bilingual:{ n:10, lives:3, time:0 }, boss: { n:10, lives:3, time:11 },
+  mastery:  { n:10, lives:Infinity, time:0, mastery:true, passMark:80 }, review: { n:10, lives:Infinity, time:0 }
 };
 
 function buildRoundSync(mode, n){
-  if(mode === "bilingual") return weightedSample(SPANISH_WORDS.slice(), n);
+  // Filter out Mastered words for standard modes!
+  const filterMastered = (pool) => pool.filter(w => (masteryOf(w.w).s || 0) < 3);
+
+  if(mode === "bilingual") return weightedSample(filterMastered(SPANISH_WORDS), n);
   const all = allWordsPool();
+  
   if(mode === "mastery") return weightedSample(all.filter(w => (masteryOf(w.w).s || 0) >= 3), n);
   if(mode === "review"){
     let pool = all.filter(w => { const m = state.mastery[w.w]; return m && m.w > 0 && (m.s||0) < 3; });
-    if(pool.length < 6) pool = all.filter(w => masteryScore(w.w) < 1);
-    if(pool.length < 6) pool = all.slice();
+    if(pool.length < 6) pool = filterMastered(all);
     return weightedSample(pool, n);
   }
+  
   const tiers = mode === "boss" ? [3,4] : mode === "blitz" ? [2,3] : [1,2];
-  let pool = all.filter(w => tiers.includes(w.t));
-  if(!pool.length) pool = all.slice();
+  let pool = filterMastered(all.filter(w => tiers.includes(w.t)));
+  
+  // If they mastered everything in this tier, fallback to all words so it doesn't crash
+  if(pool.length < 6) pool = all.filter(w => tiers.includes(w.t));
+  if(pool.length < 6) pool = all;
   return weightedSample(pool, n);
 }
 
@@ -977,12 +945,17 @@ async function buildRoundAI(mode, n){
   const isBilingual = mode === "bilingual";
   const tiers = mode === "boss" ? [3,4] : mode === "blitz" ? [2,3] : [1,2];
   await ensureAIPools(tiers, isBilingual);
+  
   let pool = [];
   tiers.forEach(t => {
-    const key = isBilingual ? `es_${t}` : t;
+    const key = `${state.industry}_${isBilingual ? 'es_' : ''}${t}`;
     const p = state.aiPacks[key];
     if(p && Array.isArray(p.words)) pool = pool.concat(p.words);
   });
+  
+  // Filter out any words mastered
+  pool = pool.filter(w => (masteryOf(w.w).s || 0) < 3);
+  
   if(pool.length < 6) return buildRoundSync(mode, n);
   return weightedSample(pool, n);
 }
@@ -1147,7 +1120,7 @@ function useHint(){
 }
 
 /* ==========================================================================
-   9. END OF ROUND (AND RESULTS UI)
+   9. END OF ROUND
    ========================================================================== */
 function endGame(){
   cancelAnimationFrame(timerRAF); clearTimeout(advanceTimer); if(!G) return;
@@ -1208,7 +1181,41 @@ function endGame(){
 }
 
 /* ==========================================================================
-   10. WORDBOOK & PROGRESS
+   10. FLOATING CARD (EXPLANATIONS)
+   ========================================================================== */
+async function openWordModal(word){
+  sfx.click();
+  const modal = $("#wordModal");
+  const mWord = $("#mWord"), mDef = $("#mDef"), mRule = $("#mRule"), mMnemonic = $("#mMnemonic");
+  
+  const obj = allWordsPool().find(x => x.w === word);
+  mWord.textContent = word; mDef.textContent = obj ? obj.d : "Unknown word";
+  $("#mSpeak").onclick = () => speak(word);
+  
+  modal.classList.add("loading"); modal.classList.add("open");
+  
+  if(state.wordExplanations[word]){
+    mRule.textContent = state.wordExplanations[word].rule;
+    mMnemonic.textContent = state.wordExplanations[word].mnemonic;
+    modal.classList.remove("loading");
+    return;
+  }
+  
+  try {
+    const r = await fetch("/api/explain-word", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ word }) });
+    const data = await r.json();
+    state.wordExplanations[word] = data; save();
+    mRule.textContent = data.rule; mMnemonic.textContent = data.mnemonic;
+  } catch(e) {
+    mRule.textContent = "Oops! The AI connection failed.";
+    mMnemonic.textContent = "Error details: " + e.message; 
+  } finally { modal.classList.remove("loading"); }
+}
+$("#mClose").addEventListener("click", () => { sfx.click(); $("#wordModal").classList.remove("open"); });
+$("#wordModal").addEventListener("click", (e) => { if(e.target.id === "wordModal") $("#wordModal").classList.remove("open"); });
+
+/* ==========================================================================
+   11. WORDBOOK & PROGRESS
    ========================================================================== */
 let wbFilter = "all";
 function masteryPips(w){ const m = masteryOf(w); const s = m.s || 0; let pips = ""; for(let i=0;i<3;i++){ pips += `<span class="pip ${i < s ? "on" : (m.w > 0 && i === 0 && s === 0 ? "bad" : "")}"></span>`; } return pips; }
@@ -1263,16 +1270,12 @@ function renderProgress(){
 }
 
 /* ==========================================================================
-   11. EVENT WIRING & INIT
+   12. EVENT WIRING & INIT
    ========================================================================== */
 $("#soundBtn").addEventListener("click", () => { state.sound = !state.sound; save(); updateHUD(); if(state.sound){ initAudio(); sfx.click(); } });
 $("#teacherBtn").addEventListener("click", () => { sfx.click(); showScreen("teacher"); });
-$("#backHomeFromTeacher").addEventListener("click", () => { sfx.click(); renderHome(); showScreen("home"); });
 $("#wordbookBtn").addEventListener("click", () => { sfx.click(); renderWordbook(); showScreen("words"); });
 $("#progressBtn").addEventListener("click", () => { sfx.click(); renderProgress(); showScreen("progress"); });
-$("#backHomeBtn").addEventListener("click", () => { sfx.click(); renderHome(); showScreen("home"); });
-$("#backHomeFromProgress").addEventListener("click", () => { sfx.click(); renderHome(); showScreen("home"); });
-$("#homeBtn").addEventListener("click", () => { sfx.click(); renderHome(); showScreen("home"); });
 $("#progressFromResultsBtn").addEventListener("click", () => { sfx.click(); renderProgress(); showScreen("progress"); });
 
 $("#resetBtn").addEventListener("click", () => {
@@ -1282,17 +1285,32 @@ $("#resetBtn").addEventListener("click", () => {
 });
 
 document.querySelectorAll("[data-src]").forEach(btn => {
-  btn.addEventListener("click", () => { state.wordSource = btn.dataset.src; save(); renderHome(); sfx.click(); if(btn.dataset.src === "ai") toast("AI mode on — first round will fetch words."); });
+  btn.addEventListener("click", () => { state.wordSource = btn.dataset.src; save(); renderHome(); sfx.click(); if(btn.dataset.src === "ai") toast("AI mode on — select an industry below."); });
 });
+
+document.querySelectorAll(".ind-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    state.industry = btn.dataset.ind;
+    state.customIndustry = ""; $("#indCustom").value = "";
+    save(); renderHome(); sfx.click();
+  });
+});
+$("#indCustom").addEventListener("input", (e) => {
+  state.customIndustry = e.target.value.trim();
+  if(state.customIndustry) state.industry = "custom";
+  save();
+  document.querySelectorAll(".ind-btn").forEach(btn => btn.classList.remove("on"));
+});
+
 document.querySelectorAll("[data-f]").forEach(btn => {
   btn.addEventListener("click", () => { document.querySelectorAll("[data-f]").forEach(b => b.classList.remove("on")); btn.classList.add("on"); wbFilter = btn.dataset.f; renderWordbook(); sfx.click(); });
 });
 
-$("#speakerBtn").addEventListener("click", () => { if(G && G.current) speak(G.current.w); });
-$("#hearBtn").addEventListener("click", () => { if(G && G.current) speak(G.current.w, 0.7); sfx.click(); });
-$("#hintBtn").addEventListener("click", useHint);
-$("#skipBtn").addEventListener("click", skipWord);
-$("#submitBtn").addEventListener("click", () => submitAnswer(false));
+$("#speakerBtn").addEventListener("click", (e) => { e.stopPropagation(); if(G && G.current) speak(G.current.w); });
+$("#hearBtn").addEventListener("click", (e) => { e.stopPropagation(); if(G && G.current) speak(G.current.w, 0.7); sfx.click(); });
+$("#hintBtn").addEventListener("click", (e) => { e.stopPropagation(); useHint(); });
+$("#skipBtn").addEventListener("click", (e) => { e.stopPropagation(); skipWord(); });
+$("#submitBtn").addEventListener("click", (e) => { e.stopPropagation(); submitAnswer(false); });
 
 $("#answerInput").addEventListener("keydown", e => {
   if(e.key !== "Enter") return; e.preventDefault(); e.stopPropagation();
