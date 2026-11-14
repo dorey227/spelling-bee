@@ -1,36 +1,1312 @@
-// api/explain-word.mjs
-export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
-  const key = process.env.DEEPSEEK_API_KEY;
-  if (!key) return res.status(500).json({ error: "DEEPSEEK_API_KEY not set" });
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>SpellQuest — Australian English</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;min-height:100%}
+  body{
+    font-family:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+    background:#07060f;color:#eaeaff;overflow-x:hidden;min-height:100dvh;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-1;
+    background:
+      radial-gradient(55vw 55vw at 12% 6%,rgba(124,92,255,.35),transparent 62%),
+      radial-gradient(48vw 48vw at 92% 14%,rgba(34,211,238,.20),transparent 62%),
+      radial-gradient(60vw 60vw at 50% 108%,rgba(236,72,153,.18),transparent 62%),
+      linear-gradient(165deg,#0d0b22,#06050d 70%);
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:14px 16px 70px}
 
-  const { word } = req.body || {};
-  if (!word) return res.status(400).json({ error: "Word required" });
+  /* HUD & GENERAL STYLES */
+  .hud{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:8px 0 18px}
+  .lvl{display:flex;align-items:center;gap:11px;flex:1;min-width:0}
+  .lvl-badge{width:46px;height:46px;flex:0 0 46px;border-radius:15px;display:grid;place-items:center;font-weight:800;font-size:19px;color:#fff;background:linear-gradient(145deg,#8b6bff,#5b3ee8);box-shadow:0 8px 22px rgba(124,92,255,.45), inset 0 1px 0 rgba(255,255,255,.35)}
+  .xp{flex:1;min-width:0}
+  .xp-top{display:flex;justify-content:space-between;font-size:12px;color:#a8a8cc;margin-bottom:5px;gap:8px}
+  .xp-top b{color:#cfc9ff;font-weight:700}
+  .xp-track{height:9px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+  .xp-fill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#7c5cff,#22d3ee);transition:width .55s cubic-bezier(.22,1,.36,1);box-shadow:0 0 14px rgba(124,92,255,.7)}
+  .hud-right{display:flex;align-items:center;gap:8px}
+  .chip{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:700;padding:8px 11px;border-radius:13px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);white-space:nowrap}
+  .icon-btn{width:40px;height:40px;border-radius:13px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.07);color:#fff;font-size:17px;cursor:pointer;display:grid;place-items:center;transition:transform .15s, background .15s}
+  .icon-btn:hover{background:rgba(255,255,255,.14)}
+  .icon-btn:active{transform:scale(.92)}
 
-  const system = "You are an expert Australian English spelling teacher. You only output valid JSON.";
-  const user = `For the word "${word}", provide a very short explanation of its spelling rule or etymology, and a catchy mnemonic (memory trick) to remember it.
-Strictly use Australian English conventions (e.g., -ise, -our, -re).
-Format exactly as: {"rule": "Short explanation...", "mnemonic": "Memory trick..."}`;
+  .screen{display:none}
+  .screen.active{display:block;animation:fadeUp .35s cubic-bezier(.22,1,.36,1)}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
-  try {
-    const r = await fetch("https://api.deepseek.com/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
-      body: JSON.stringify({
-        model: "deepseek-chat",
-        messages: [{ role: "system", content: system }, { role: "user", content: user }],
-        response_format: { type: "json_object" },
-        temperature: 0.7,
-        max_tokens: 150,
-      }),
-    });
+  .hero{text-align:center;padding:12px 0 20px}
+  .hero h1{font-size:clamp(38px,10vw,58px);margin:0;letter-spacing:-2px;font-weight:900;line-height:1}
+  .hero h1 .grad{background:linear-gradient(120deg,#7c5cff,#22d3ee 55%,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 26px rgba(124,92,255,.45))}
+  .hero .sub{margin:12px 0 0;color:#9a9ac0;font-size:15px}
 
-    if (!r.ok) throw new Error("DeepSeek API error");
-    const data = await r.json();
-    const content = data.choices[0].message.content;
-    const parsed = JSON.parse(content);
-    return res.status(200).json(parsed);
-  } catch (e) {
-    return res.status(500).json({ error: "Failed to generate explanation", rule: "This is a commonly misspelled word.", mnemonic: "Break it into smaller chunks to remember it." });
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:6px 0 26px}
+  .stat{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:12px 8px;text-align:center}
+  .stat .v{font-size:19px;font-weight:800;letter-spacing:-.5px}
+  .stat .k{font-size:10.5px;color:#8f8fb8;text-transform:uppercase;letter-spacing:.7px;margin-top:3px;font-weight:700}
+  .sec-title{font-size:13px;text-transform:uppercase;letter-spacing:1.4px;color:#8f8fb8;margin:0 0 12px;font-weight:800}
+
+  /* MODES & BUTTONS */
+  .modes{display:grid;gap:11px;margin-bottom:22px}
+  .mode{display:flex;align-items:center;gap:14px;width:100%;text-align:left;cursor:pointer;background:linear-gradient(135deg,rgba(255,255,255,.085),rgba(255,255,255,.035));border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:16px 17px;color:#eaeaff;transition:transform .16s cubic-bezier(.22,1,.36,1),border-color .16s,box-shadow .16s;font-family:inherit}
+  .mode:hover{transform:translateY(-2px);border-color:rgba(124,92,255,.6);box-shadow:0 14px 34px rgba(124,92,255,.22)}
+  .mode:active{transform:scale(.985)}
+  .mode .ico{font-size:27px;flex:0 0 auto;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
+  .mode .txt{flex:1;min-width:0}
+  .mode .nm{font-weight:800;font-size:16.5px;margin-bottom:2px}
+  .mode .ds{font-size:13px;color:#9a9ac0;line-height:1.35}
+  .mode .tag{font-size:11.5px;font-weight:800;color:#0b0a1f;background:linear-gradient(120deg,#fbbf24,#f59e0b);padding:4px 9px;border-radius:99px;white-space:nowrap}
+  .mode .tag.green{background:linear-gradient(120deg,#34d399,#10b981);color:#04231a}
+
+  .btn{display:block;width:100%;padding:15px;border-radius:16px;border:none;cursor:pointer;font-family:inherit;font-size:15.5px;font-weight:800;color:#fff;background:linear-gradient(135deg,#7c5cff,#5b3ee8);box-shadow:0 10px 26px rgba(124,92,255,.35);transition:transform .15s,box-shadow .15s;user-select:none}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 14px 32px rgba(124,92,255,.45)}
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);box-shadow:none;font-weight:700;color:#cfc9ff;margin-top:10px}
+  .btn.ghost:hover{background:rgba(255,255,255,.12);box-shadow:none}
+  .btn.danger{color:#fb7185}
+  .btn:disabled{opacity:.45;pointer-events:none}
+
+  /* GAME SCREEN */
+  .game-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;min-height:30px}
+  .hearts{font-size:16px;letter-spacing:2px}
+  .heart{transition:transform .2s;display:inline-block}
+  .heart.dead{opacity:.28;filter:grayscale(1)}
+  .heart-inf{font-size:12.5px;color:#8f8fb8;font-weight:700;letter-spacing:.5px}
+  .qcount{font-size:12.5px;font-weight:800;color:#8f8fb8;letter-spacing:1px}
+  .combo{font-size:14px;font-weight:900;color:#fbbf24;transition:transform .18s;opacity:0}
+  .combo.on{opacity:1;animation:popIn .3s cubic-bezier(.22,1.6,.36,1)}
+  @keyframes popIn{from{transform:scale(.4)}to{transform:scale(1)}}
+
+  .timer-track{height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-bottom:16px}
+  .timer-fill{height:100%;width:100%;border-radius:99px;transition:width .08s linear,background .3s;background:linear-gradient(90deg,#34d399,#22d3ee)}
+
+  .card{background:linear-gradient(150deg,rgba(255,255,255,.09),rgba(255,255,255,.035));border:1px solid rgba(255,255,255,.11);border-radius:26px;padding:26px 22px;text-align:center;box-shadow:0 22px 50px rgba(0,0,0,.35);transition:border-color .25s,box-shadow .25s}
+  .card.correct-flash{border-color:rgba(52,211,153,.9);box-shadow:0 0 0 3px rgba(52,211,153,.25),0 22px 50px rgba(52,211,153,.18)}
+  .speaker{width:78px;height:78px;border-radius:50%;border:none;cursor:pointer;font-size:31px;display:grid;place-items:center;margin:0 auto 18px;background:radial-gradient(circle at 32% 26%,#9d80ff,#5b3ee8 70%);box-shadow:0 0 0 0 rgba(124,92,255,.55),0 12px 34px rgba(124,92,255,.45);animation:pulse 2.6s infinite;transition:transform .15s}
+  .speaker:hover{transform:scale(1.06)}
+  .speaker:active{transform:scale(.94)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(124,92,255,.55),0 12px 34px rgba(124,92,255,.45)}70%{box-shadow:0 0 0 22px rgba(124,92,255,0),0 12px 34px rgba(124,92,255,.45)}100%{box-shadow:0 0 0 0 rgba(124,92,255,0),0 12px 34px rgba(124,92,255,.45)}}
+  .definition{font-size:16px;color:#d7d5f5;margin:0 0 10px;line-height:1.5;font-weight:600}
+  .sentence{font-size:14px;color:#8f8fb8;margin:0;line-height:1.55;font-style:italic}
+  .pattern{text-align:center;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:26px;letter-spacing:6px;color:#22d3ee;margin:16px 0 -4px;font-weight:700;min-height:0;word-break:break-all}
+
+  .answer-row{display:flex;gap:9px;margin-top:18px}
+  #answerInput{flex:1;min-width:0;padding:16px 18px;border-radius:16px;font-size:21px;font-weight:800;font-family:inherit;letter-spacing:1.5px;text-align:center;color:#fff;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.13);outline:none;transition:border-color .18s,box-shadow .18s}
+  #answerInput::placeholder{color:#5d5d85;letter-spacing:normal;font-weight:600;font-size:15px}
+  #answerInput:focus{border-color:#7c5cff;box-shadow:0 0 0 4px rgba(124,92,255,.18)}
+  #answerInput:disabled{opacity:.7}
+  #submitBtn{padding:0 24px;border-radius:16px;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:15px;color:#fff;background:linear-gradient(135deg,#22d3ee,#0891b2);box-shadow:0 8px 22px rgba(34,211,238,.3);transition:transform .15s;white-space:nowrap}
+  #submitBtn:active{transform:scale(.96)}
+  #submitBtn:disabled{opacity:.4;pointer-events:none}
+
+  .hint-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .ghost-btn{flex:1;min-width:110px;padding:11px 8px;border-radius:13px;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:700;color:#a8a8cc;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);transition:background .15s,color .15s,transform .15s}
+  .ghost-btn:hover{background:rgba(255,255,255,.11);color:#eaeaff}
+  .ghost-btn:active{transform:scale(.96)}
+
+  .feedback{min-height:52px;margin-top:14px;text-align:center;font-size:15px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .feedback .ok{color:#34d399;font-size:17px}
+  .feedback .bad{color:#fb7185;font-size:17px}
+  .feedback .ans{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:22px;letter-spacing:2.5px;color:#fff;font-weight:800}
+  .feedback .you{font-size:13px;color:#8f8fb8;text-decoration:line-through}
+  .feedback .bonus{font-size:12.5px;color:#fbbf24;font-weight:800}
+
+  /* RESULTS & BREAKDOWN */
+  .result-head{text-align:center;padding:18px 0 8px}
+  .grade{width:112px;height:112px;border-radius:50%;margin:0 auto 16px;display:grid;place-items:center;font-size:46px;font-weight:900;letter-spacing:-2px;background:radial-gradient(circle at 32% 26%,#9d80ff,#4b2fd6 75%);box-shadow:0 0 0 8px rgba(124,92,255,.1),0 20px 46px rgba(124,92,255,.45);animation:popIn .5s cubic-bezier(.22,1.6,.36,1)}
+  .result-head h2{margin:0 0 6px;font-size:25px;font-weight:900;letter-spacing:-.5px}
+  .result-head p{margin:0;color:#9a9ac0;font-size:14px}
+  .res-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:22px 0}
+  .res-stats .stat .v{font-size:21px}
+
+  .missed-list, .breakdown{display:grid;gap:6px;margin-bottom:20px}
+  .missed-item, .bd-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);cursor:pointer;transition:background .15s}
+  .missed-item:hover, .bd-row:hover{background:rgba(255,255,255,.09)}
+  .missed-item{background:rgba(251,113,133,.09);border-color:rgba(251,113,133,.22)}
+  .bd-row.ok{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.22)}
+  .bd-row.bad{background:rgba(251,113,133,.08);border-color:rgba(251,113,133,.22)}
+  .bd-mark{font-weight:900;font-size:15px;flex:0 0 18px;text-align:center}
+  .bd-row.ok .bd-mark{color:#34d399}
+  .bd-row.bad .bd-mark{color:#fb7185}
+  .missed-item .w, .bd-word{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:800;font-size:15px;letter-spacing:.7px;flex:0 0 auto;color:#fff}
+  .missed-item .d, .bd-typed{font-size:12.5px;color:#8f8fb8;margin-left:auto;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .bd-typed s{color:#fb7185}
+  .bd-row::after{content:"💡";font-size:14px;opacity:.3;margin-left:6px}
+  .bd-row:hover::after{opacity:1}
+
+  /* WORDBOOK */
+  .filters{display:flex;gap:8px;margin-bottom:16px}
+  .filter{flex:1;padding:10px;border-radius:12px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:800;color:#a8a8cc;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);transition:.15s}
+  .filter.on{background:linear-gradient(135deg,#7c5cff,#5b3ee8);color:#fff;border-color:transparent;box-shadow:0 8px 20px rgba(124,92,255,.32)}
+  .tier-h{font-size:12px;text-transform:uppercase;letter-spacing:1.3px;color:#8f8fb8;margin:22px 0 9px;font-weight:800}
+  .word-row{display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:13px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);margin-bottom:7px;cursor:pointer;transition:background .15s}
+  .word-row:hover{background:rgba(255,255,255,.09)}
+  .word-row .w{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:800;font-size:15px;letter-spacing:.8px;flex:0 0 auto;color:#fff}
+  .word-row .d{font-size:12px;color:#8f8fb8;flex:1;min-width:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pips{display:flex;gap:3px;flex:0 0 auto}
+  .pip{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.14)}
+  .pip.on{background:#34d399;box-shadow:0 0 8px rgba(52,211,153,.7)}
+  .pip.bad{background:#fb7185}
+  .cert-badge{font-size:13px;flex:0 0 auto;margin-left:2px}
+
+  /* TEACHER RULES */
+  .rule-card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;margin-bottom:12px}
+  .rule-title{font-size:16px;font-weight:800;color:#eaeaff;margin:0 0 6px;display:flex;align-items:center;gap:8px}
+  .rule-desc{font-size:13px;color:#a8a8cc;margin:0 0 12px;line-height:1.5}
+  .rule-example{display:flex;gap:8px;margin-bottom:6px;font-size:13.5px;align-items:baseline}
+  .rule-aus{color:#34d399;font-weight:800;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .rule-us{color:#fb7185;text-decoration:line-through;font-family:ui-monospace,Menlo,Consolas,monospace;opacity:.8}
+  .rule-note{font-size:12px;color:#8f8fb8;margin-top:2px}
+
+  /* HISTORY */
+  .hist-card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:15px;margin-bottom:9px;overflow:hidden;transition:border-color .15s}
+  .hist-card[open]{border-color:rgba(124,92,255,.4)}
+  .hist-card summary{display:flex;align-items:center;gap:11px;padding:13px 15px;cursor:pointer;list-style:none;user-select:none}
+  .hist-card summary::-webkit-details-marker{display:none}
+  .hist-ico{font-size:22px;flex:0 0 auto}
+  .hist-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .hist-mode{font-weight:800;font-size:14px}
+  .hist-date{font-size:11.5px;color:#8f8fb8}
+  .hist-acc{font-weight:900;font-size:17px;color:#cfc9ff;flex:0 0 auto}
+  .hist-body{padding:0 15px 14px;border-top:1px solid rgba(255,255,255,.06);margin-top:2px;padding-top:12px}
+  .hist-stats{display:flex;gap:14px;font-size:12.5px;color:#a8a8cc;font-weight:700;margin-bottom:10px;flex-wrap:wrap}
+  .hist-answers{display:flex;flex-wrap:wrap;gap:5px}
+  .hist-ans{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:7px;letter-spacing:.3px}
+  .hist-ans.ok{background:rgba(52,211,153,.13);color:#34d399}
+  .hist-ans.bad{background:rgba(251,113,133,.13);color:#fb7185}
+
+  /* FLOATING MODAL */
+  #wordModal{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;background:rgba(7,6,15,.85);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s ease}
+  #wordModal.open{opacity:1;pointer-events:auto}
+  .modal-card{background:linear-gradient(150deg,#1a1738,#0f0d23);border:1px solid rgba(124,92,255,.4);border-radius:26px 26px 0 0;width:100%;max-width:720px;padding:24px 20px 32px;transform:translateY(100%);transition:transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);box-shadow:0 -10px 40px rgba(0,0,0,.5);text-align:center}
+  #wordModal.open .modal-card{transform:translateY(0)}
+  .modal-word{font-size:32px;font-weight:900;color:#fff;font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:2px;margin-bottom:8px}
+  .modal-def{font-size:14px;color:#a8a8cc;margin-bottom:20px}
+  .modal-btn{display:inline-block;padding:10px 20px;border-radius:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:20px;transition:background .15s}
+  .modal-btn:hover{background:rgba(255,255,255,.2)}
+  .modal-section{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;text-align:left;margin-bottom:12px}
+  .modal-section h4{margin:0 0 6px;font-size:13px;color:#22d3ee;text-transform:uppercase;letter-spacing:1px}
+  .modal-section p{margin:0;font-size:14.5px;color:#d7d5f5;line-height:1.5}
+  .modal-loading{display:none;padding:20px 0;text-align:center;color:#8f8fb8;font-size:14px}
+  .modal-content{display:block}
+  #wordModal.loading .modal-content{display:none}
+  #wordModal.loading .modal-loading{display:block}
+
+  /* TOASTS & FX */
+  #fx{position:fixed;inset:0;pointer-events:none;z-index:9998;overflow:hidden}
+  .particle{position:fixed;border-radius:50%;animation:popOut .8s cubic-bezier(.15,.9,.3,1) forwards}
+  @keyframes popOut{to{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
+  @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(3px)}30%,50%,70%{transform:translateX(-6px)}40%,60%{transform:translateX(6px)}}
+  .shake{animation:shake .45s}
+
+  #toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);z-index:9999;background:rgba(20,18,45,.96);border:1px solid rgba(124,92,255,.5);color:#fff;padding:12px 20px;border-radius:14px;font-size:13.5px;font-weight:700;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;backdrop-filter:blur(12px);box-shadow:0 16px 40px rgba(0,0,0,.5);max-width:88vw;text-align:center}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+
+  #levelup{position:fixed;inset:0;z-index:9999;display:none;place-items:center;pointer-events:none;background:radial-gradient(circle at 50% 50%,rgba(124,92,255,.28),transparent 65%)}
+  #levelup.show{display:grid;animation:luFade 1.9s ease forwards}
+  @keyframes luFade{0%{opacity:0}12%{opacity:1}78%{opacity:1}100%{opacity:0}}
+  .lu-box{text-align:center;animation:popIn .5s cubic-bezier(.22,1.6,.36,1)}
+  .lu-box .big{font-size:13px;letter-spacing:5px;color:#22d3ee;font-weight:900}
+  .lu-box .num{font-size:74px;font-weight:900;line-height:1;letter-spacing:-3px;background:linear-gradient(120deg,#fbbf24,#fb7185,#7c5cff);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 8px 30px rgba(251,191,36,.5))}
+  .lu-box .rank{font-size:16px;font-weight:800;color:#cfc9ff;margin-top:4px}
+
+  .banner{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:#fbbf24;padding:11px 14px;border-radius:13px;font-size:12.5px;font-weight:700;margin-bottom:14px;line-height:1.5}
+  #aiLoading{position:fixed;inset:0;z-index:9997;display:none;place-items:center;text-align:center;background:rgba(7,6,15,.86);backdrop-filter:blur(10px);color:#eaeaff;padding:24px}
+  #aiLoading.show{display:grid}
+  .spinner{width:56px;height:56px;border-radius:50%;margin:0 auto 18px;border:4px solid rgba(124,92,255,.2);border-top-color:#7c5cff;animation:spin .9s linear infinite;box-shadow:0 0 30px rgba(124,92,255,.5)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #aiLoading .big{font-size:16px;font-weight:800;margin:0 0 6px}
+  #aiLoading .small{font-size:12.5px;color:#8f8fb8;margin:0;line-height:1.5}
+
+  @media(max-width:420px){
+    .stat-grid{grid-template-columns:repeat(2,1fr)}
+    .answer-row{flex-direction:column}
+    #submitBtn{padding:14px}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="hud">
+    <div class="lvl">
+      <div class="lvl-badge" id="lvlBadge">1</div>
+      <div class="xp">
+        <div class="xp-top"><span id="rankName">Rookie Speller</span><span id="xpText">0 / 100 XP</span></div>
+        <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
+      </div>
+    </div>
+    <div class="hud-right">
+      <div class="chip" id="streakChip">🔥 <b id="streakNum">0</b></div>
+      <button class="icon-btn" id="soundBtn" title="Toggle sound">🔊</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- HOME -->
+    <section class="screen active" id="screen-home">
+      <div class="hero">
+        <h1>Spell<span class="grad">Quest</span></h1>
+        <p class="sub">Level up your Australian spelling, one word at a time.</p>
+      </div>
+      <div id="speechWarn"></div>
+      <div class="stat-grid">
+        <div class="stat"><div class="v" id="sLevel">1</div><div class="k">Level</div></div>
+        <div class="stat"><div class="v" id="sAcc">—</div><div class="k">Accuracy</div></div>
+        <div class="stat"><div class="v" id="sMastered">0</div><div class="k">Mastered</div></div>
+        <div class="stat"><div class="v" id="sStreak">0</div><div class="k">Day streak</div></div>
+      </div>
+
+      <div class="source-box">
+        <h2 class="sec-title">Word source</h2>
+        <div class="filters" id="sourceFilters">
+          <button class="filter" data-src="local">📚 Built-in</button>
+          <button class="filter" data-src="ai">✨ AI (DeepSeek)</button>
+        </div>
+        <div id="aiStatus"></div>
+      </div>
+
+      <h2 class="sec-title">Choose your mode</h2>
+      <div class="modes" id="modes"></div>
+
+      <button class="btn ghost" id="teacherBtn" style="color:#fbbf24;border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.1)">🎓 Teacher: Spelling Rules</button>
+      <button class="btn ghost" id="wordbookBtn">📖 Open Wordbook</button>
+      <button class="btn ghost" id="progressBtn">📊 View Progress</button>
+      <button class="btn ghost danger" id="resetBtn">Reset all progress</button>
+    </section>
+
+    <!-- TEACHER -->
+    <section class="screen" id="screen-teacher">
+      <div class="hero" style="padding-bottom:14px">
+        <h1 style="font-size:32px">Aussie Rules</h1>
+        <p class="sub">Master the spelling tricks for Australian workplaces.</p>
+      </div>
+      <div class="rule-card">
+        <h3 class="rule-title">🇦🇺 -ise (Not -ize)</h3>
+        <p class="rule-desc">Australian English uses <b>-ise</b> for most verbs. American English uses <b>-ize</b>.</p>
+        <div class="rule-example"><span class="rule-aus">organise</span> <span class="rule-us">organize</span></div>
+        <div class="rule-example"><span class="rule-aus">realise</span> <span class="rule-us">realize</span></div>
+        <div class="rule-example"><span class="rule-aus">apologise</span> <span class="rule-us">apologize</span></div>
+        <div class="rule-note">Memory trick: Think "S" for "Straya".</div>
+      </div>
+      <div class="rule-card">
+        <h3 class="rule-title">🇦🇺 -our (Not -or)</h3>
+        <p class="rule-desc">Most nouns ending in an "uh" sound use <b>-our</b> in Australia.</p>
+        <div class="rule-example"><span class="rule-aus">colour</span> <span class="rule-us">color</span></div>
+        <div class="rule-example"><span class="rule-aus">behaviour</span> <span class="rule-us">behavior</span></div>
+        <div class="rule-example"><span class="rule-aus">favour</span> <span class="rule-us">favor</span></div>
+      </div>
+      <div class="rule-card">
+        <h3 class="rule-title">🇦🇺 -re (Not -er)</h3>
+        <p class="rule-desc">Centre, theatre, metre. In Australia, we put the "r" before the "e" in these words.</p>
+        <div class="rule-example"><span class="rule-aus">centre</span> <span class="rule-us">center</span></div>
+        <div class="rule-example"><span class="rule-aus">theatre</span> <span class="rule-us">theater</span></div>
+        <div class="rule-example"><span class="rule-aus">metre</span> <span class="rule-us">meter</span></div>
+      </div>
+      <div class="rule-card">
+        <h3 class="rule-title">🇦🇺 -ce vs -se</h3>
+        <p class="rule-desc">In Australian English, the <b>noun</b> ends in <b>-ce</b>, but the <b>verb</b> ends in <b>-se</b>.</p>
+        <div class="rule-example"><span class="rule-aus">licence</span> (noun) vs <span class="rule-aus">license</span> (verb)</div>
+        <div class="rule-example"><span class="rule-aus">practice</span> (noun) vs <span class="rule-aus">practise</span> (verb)</div>
+        <div class="rule-note">Example: "I need a driver's <b>licence</b> to <b>license</b> this vehicle."</div>
+      </div>
+      <div class="rule-card">
+        <h3 class="rule-title">🇦🇺 -ogue (Not -og)</h3>
+        <p class="rule-desc">Australian English keeps the French "ue" at the end of these words.</p>
+        <div class="rule-example"><span class="rule-aus">catalogue</span> <span class="rule-us">catalog</span></div>
+        <div class="rule-example"><span class="rule-aus">dialogue</span> <span class="rule-us">dialog</span></div>
+        <div class="rule-example"><span class="rule-aus">analogue</span> <span class="rule-us">analog</span></div>
+      </div>
+      <div class="rule-card">
+        <h3 class="rule-title">🇦🇺 Double L</h3>
+        <p class="rule-desc">When adding a suffix like -ing or -ed, we double the L in Australia.</p>
+        <div class="rule-example"><span class="rule-aus">travelling</span> <span class="rule-us">traveling</span></div>
+        <div class="rule-example"><span class="rule-aus">cancelled</span> <span class="rule-us">canceled</span></div>
+        <div class="rule-example"><span class="rule-aus">modelling</span> <span class="rule-us">modeling</span></div>
+      </div>
+      <button class="btn ghost" id="backHomeFromTeacher" style="margin-top:20px">🏠 Back home</button>
+    </section>
+
+    <!-- GAME -->
+    <section class="screen" id="screen-game">
+      <div class="game-top">
+        <div class="hearts" id="hearts"></div>
+        <div class="qcount" id="qcount">1 / 10</div>
+        <div class="combo" id="combo">x1</div>
+      </div>
+      <div class="timer-track"><div class="timer-fill" id="timerFill"></div></div>
+      <div class="card" id="promptCard">
+        <button class="speaker" id="speakerBtn" title="Hear the word">🔊</button>
+        <p class="definition" id="definition"></p>
+        <p class="sentence" id="sentence"></p>
+        <div class="pattern" id="pattern"></div>
+      </div>
+      <div class="answer-row">
+        <input id="answerInput" type="text" placeholder="Type the word…" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false">
+        <button id="submitBtn">Check</button>
+      </div>
+      <div class="hint-row">
+        <button class="ghost-btn" id="hearBtn">🔁 Hear again</button>
+        <button class="ghost-btn" id="hintBtn">💡 Hint (−5 XP)</button>
+        <button class="ghost-btn" id="skipBtn">⏭ Skip</button>
+      </div>
+      <div class="feedback" id="feedback"></div>
+    </section>
+
+    <!-- RESULTS -->
+    <section class="screen" id="screen-results">
+      <div class="result-head">
+        <div class="grade" id="grade">A</div>
+        <h2 id="resultTitle">Nice work!</h2>
+        <p id="resultSub">Here's how you did.</p>
+        <p id="resultSource" style="margin-top:8px;font-size:12px;color:#8f8fb8"></p>
+      </div>
+      <div class="res-stats">
+        <div class="stat"><div class="v" id="rXP">0</div><div class="k">XP earned</div></div>
+        <div class="stat"><div class="v" id="rAcc">0%</div><div class="k">Accuracy</div></div>
+        <div class="stat"><div class="v" id="rCombo">0</div><div class="k">Best combo</div></div>
+      </div>
+      <div id="missedSection"></div>
+      <div id="answerBreakdown"></div>
+      <button class="btn" id="playAgainBtn">Play again</button>
+      <button class="btn ghost" id="refreshFromResultsBtn" style="display:none">✨ Generate fresh AI words</button>
+      <button class="btn ghost" id="reviewMissedBtn">🔁 Drill my mistakes</button>
+      <button class="btn ghost" id="progressFromResultsBtn">📊 View progress</button>
+      <button class="btn ghost" id="homeBtn">🏠 Back home</button>
+    </section>
+
+    <!-- WORDBOOK -->
+    <section class="screen" id="screen-words">
+      <div class="hero" style="padding-bottom:14px">
+        <h1 style="font-size:32px">Wordbook</h1>
+        <p class="sub">Every word you've played. Tap a word to learn its trick.</p>
+      </div>
+      <div class="filters">
+        <button class="filter on" data-f="all">All</button>
+        <button class="filter" data-f="learning">Learning</button>
+        <button class="filter" data-f="mastered">Mastered</button>
+      </div>
+      <div id="wordList"></div>
+      <button class="btn ghost" id="backHomeBtn" style="margin-top:20px">🏠 Back home</button>
+    </section>
+
+    <!-- PROGRESS -->
+    <section class="screen" id="screen-progress">
+      <div class="hero" style="padding-bottom:14px">
+        <h1 style="font-size:32px">Progress</h1>
+        <p class="sub">Your permanent record — every round you've ever played.</p>
+      </div>
+      <div class="stat-grid" id="progressStats"></div>
+      <div id="historyList"></div>
+      <button class="btn ghost" id="backHomeFromProgress" style="margin-top:20px">🏠 Back home</button>
+    </section>
+  </main>
+</div>
+
+<!-- FLOATING CARD MODAL -->
+<div id="wordModal">
+  <div class="modal-card">
+    <div class="modal-word" id="mWord">Word</div>
+    <div class="modal-def" id="mDef">Definition</div>
+    <button class="modal-btn" id="mSpeak">🔊 Listen</button>
+    
+    <div class="modal-loading">
+      <div class="spinner" style="width:30px;height:30px;border-width:3px;margin-bottom:10px"></div>
+      <div>Asking the teacher for a trick...</div>
+    </div>
+    
+    <div class="modal-content">
+      <div class="modal-section">
+        <h4>🧠 The Rule</h4>
+        <p id="mRule">-</p>
+      </div>
+      <div class="modal-section">
+        <h4>💡 Memory Trick</h4>
+        <p id="mMnemonic">-</p>
+      </div>
+    </div>
+    
+    <button class="btn ghost" id="mClose" style="margin-top:16px">Close</button>
+  </div>
+</div>
+
+<div id="fx"></div>
+<div id="toast"></div>
+<div id="levelup"><div class="lu-box">
+  <div class="big">LEVEL UP</div>
+  <div class="num" id="luLevel">2</div>
+  <div class="rank" id="luRank">Word Scout</div>
+</div></div>
+<div id="aiLoading"><div>
+  <div class="spinner"></div>
+  <p class="big">✨ Asking DeepSeek for fresh words…</p>
+  <p class="small">First time per difficulty can take a few seconds.<br>Results are cached so later rounds are instant.</p>
+</div></div>
+
+<script>
+/* ==========================================================================
+   1. LOCAL FALLBACK WORDS (Australian English + Spanish Hybrids)
+   ========================================================================== */
+const WORDS = [
+  /* TIER 1 */
+  {w:"friend",d:"a person you like and know well",s:"She's been my best ___ since school.",t:1},
+  {w:"because",d:"for the reason that",s:"I was late ___ the bus broke down.",t:1},
+  {w:"people",d:"more than one person",s:"Lots of ___ came to the meeting.",t:1},
+  {w:"really",d:"truly; actually",s:"I'm ___ sorry about that.",t:1},
+  {w:"before",d:"earlier than something",s:"Please finish it ___ Friday.",t:1},
+  {w:"thought",d:"the past tense of 'think'",s:"I ___ you were coming today.",t:1},
+  {w:"through",d:"from one end to the other",s:"We walked ___ the park.",t:1},
+  {w:"enough",d:"as much as is needed",s:"That's ___ for now, thanks.",t:1},
+  {w:"always",d:"every time; without fail",s:"She ___ arrives early.",t:1},
+  {w:"together",d:"with each other",s:"Let's do this ___ as a team.",t:1},
+  {w:"beautiful",d:"very pleasing to look at",s:"What a ___ day it is.",t:1},
+  {w:"different",d:"not the same",s:"We need a ___ approach.",t:1},
+  {w:"tomorrow",d:"the day after today",s:"See you ___ morning.",t:1},
+  {w:"business",d:"work, trade, or commerce",s:"I'm here on ___ today.",t:1},
+  {w:"answer",d:"a reply to a question",s:"Do you know the ___?",t:1},
+  {w:"question",d:"something you ask",s:"That's a good ___!",t:1},
+  {w:"again",d:"one more time",s:"Can you say that ___ please?",t:1},
+  {w:"little",d:"small in size or amount",s:"Just a ___ bit more.",t:1},
+  {w:"another",d:"one more; a different one",s:"Can I have ___ copy?",t:1},
+  {w:"every",d:"each one of a group",s:"___ seat is taken.",t:1},
+  {w:"minute",d:"sixty seconds",s:"Give me a ___ to check.",t:1},
+  {w:"money",d:"coins and notes used to buy things",s:"I need to save some ___.",t:1},
+  {w:"write",d:"to put words on paper or screen",s:"Please ___ it down.",t:1},
+  {w:"right",d:"correct; not wrong",s:"You're ___ about that.",t:1},
+  {w:"know",d:"to have knowledge of something",s:"I ___ what you mean.",t:1},
+  {w:"could",d:"used to ask politely",s:"___ you help me with this?",t:1},
+  {w:"would",d:"used for polite offers",s:"I ___ like a coffee, please.",t:1},
+  {w:"their",d:"belonging to them",s:"___ office is upstairs.",t:1},
+  {w:"there",d:"in that place",s:"Put the box over ___.",t:1},
+  {w:"where",d:"in or to what place",s:"___ is the meeting room?",t:1},
+
+  /* TIER 2 */
+  {w:"colleague",d:"a person you work with",s:"My ___ is on holiday this week.",t:2},
+  {w:"schedule",d:"a plan of times and events",s:"Let's check the ___ first.",t:2},
+  {w:"appointment",d:"a meeting at a fixed time",s:"I have a dentist ___ at 3.",t:2},
+  {w:"meeting",d:"a gathering to discuss something",s:"The ___ starts at nine.",t:2},
+  {w:"email",d:"a message sent electronically",s:"Please send me an ___ about it.",t:2},
+  {w:"attachment",d:"a file sent along with an email",s:"I can't open the ___.",t:2},
+  {w:"document",d:"a file or written record",s:"Save the ___ before you close it.",t:2},
+  {w:"spreadsheet",d:"a grid of rows and columns for data",s:"Update the ___ with the new figures.",t:2},
+  {w:"customer",d:"someone who buys something",s:"The ___ wants a refund.",t:2},
+  {w:"management",d:"the people in charge of a company",s:"___ approved the new plan.",t:2},
+  {w:"department",d:"a section of a company",s:"I work in the sales ___.",t:2},
+  {w:"office",d:"a place where people work",s:"I'll be in the ___ until five.",t:2},
+  {w:"computer",d:"an electronic machine for work",s:"Restart your ___.",t:2},
+  {w:"printer",d:"a machine that puts words on paper",s:"The ___ is out of paper.",t:2},
+  {w:"deadline",d:"the latest time to finish something",s:"The ___ is Friday at noon.",t:2},
+  {w:"report",d:"a written account of something",s:"Send me the ___ by email.",t:2},
+  {w:"invoice",d:"a bill for goods or services",s:"Please pay the ___ today.",t:2},
+  {w:"salary",d:"money paid regularly for work",s:"The ___ is paid every month.",t:2},
+  {w:"interview",d:"a meeting to decide on a job",s:"Good luck with the ___!",t:2},
+  {w:"experience",d:"knowledge gained by doing something",s:"She has five years of ___.",t:2},
+  {w:"application",d:"a formal written request",s:"Fill in the job ___ form.",t:2},
+  {w:"reference",d:"a statement about your character",s:"Can you be my ___?",t:2},
+  {w:"contract",d:"a legal written agreement",s:"Read the ___ before signing.",t:2},
+  {w:"flexible",d:"able to change to suit the situation",s:"My working hours are ___.",t:2},
+  {w:"professional",d:"showing skill and good behaviour",s:"Keep your email ___.",t:2},
+  {w:"communication",d:"the sharing of information",s:"Good ___ is key in any job.",t:2},
+  {w:"responsibility",d:"a duty you are expected to handle",s:"That task is my ___.",t:2},
+  {w:"opportunity",d:"a chance to do something",s:"This is a great ___.",t:2},
+  {w:"confidence",d:"belief in your own ability",s:"Practice builds ___.",t:2},
+  {w:"knowledge",d:"the information you know",s:"___ is power.",t:2},
+  {w:"organise",d:"to arrange or plan something",s:"I need to ___ the meeting.",t:2},
+  {w:"colour",d:"red, blue, green, etc.",s:"What ___ is the logo?",t:2},
+  {w:"centre",d:"the middle point",s:"The conference ___ is downtown.",t:2},
+  {w:"behaviour",d:"the way someone acts",s:"His ___ in the meeting was odd.",t:2},
+  {w:"realise",d:"to become aware of something",s:"I didn't ___ it was due today.",t:2},
+  {w:"licence",d:"a permit to do something",s:"Do you have a driver's ___?",t:2},
+  {w:"favour",d:"an act of kindness",s:"Could you do me a ___?",t:2},
+
+  /* TIER 3 */
+  {w:"definitely",d:"certainly; without doubt",s:"I'll ___ be there at eight.",t:3},
+  {w:"separate",d:"apart from each other",s:"Keep the two lists ___.",t:3},
+  {w:"necessary",d:"needed; required",s:"It's ___ to bring photo ID.",t:3},
+  {w:"accommodate",d:"to fit or help someone",s:"The room can ___ twenty people.",t:3},
+  {w:"receive",d:"to get something given to you",s:"Did you ___ my email?",t:3},
+  {w:"believe",d:"to think something is true",s:"I ___ you can do this.",t:3},
+  {w:"occurred",d:"happened (past tense)",s:"An error ___ during the upload.",t:3},
+  {w:"recommend",d:"to suggest something good",s:"I ___ the chicken.",t:3},
+  {w:"environment",d:"the surroundings you work in",s:"A quiet ___ helps me focus.",t:3},
+  {w:"committee",d:"a group chosen to decide things",s:"The ___ meets on Monday.",t:3},
+  {w:"maintenance",d:"the work of keeping things working",s:"The ___ team arrives at ten.",t:3},
+  {w:"independent",d:"free; not controlled by others",s:"She's a very ___ worker.",t:3},
+  {w:"embarrass",d:"to make someone feel ashamed",s:"Don't ___ me in the meeting.",t:3},
+  {w:"privilege",d:"a special right or honour",s:"It's a ___ to work here.",t:3},
+  {w:"occasion",d:"a particular event or time",s:"It's a special ___.",t:3},
+  {w:"restaurant",d:"a place where you buy meals",s:"Let's try that new ___.",t:3},
+  {w:"surprise",d:"something unexpected",s:"What a lovely ___!",t:3},
+  {w:"successful",d:"achieving the result you wanted",s:"It was a ___ project.",t:3},
+  {w:"immediately",d:"right away; at once",s:"Please reply ___.",t:3},
+  {w:"government",d:"the group that runs a country",s:"The ___ announced new rules.",t:3},
+  {w:"guarantee",d:"a firm promise",s:"We ___ our work for a year.",t:3},
+  {w:"occasionally",d:"sometimes, but not often",s:"I ___ work late on Fridays.",t:3},
+  {w:"perseverance",d:"continuing to try despite difficulty",s:"___ always pays off.",t:3},
+  {w:"convenience",d:"the quality of being easy to use",s:"Reply at your ___.",t:3},
+  {w:"recommendation",d:"a suggestion that something is good",s:"I got a strong ___ from her.",t:3},
+  {w:"acquaintance",d:"someone you know a little",s:"He's a work ___, not a friend.",t:3},
+  {w:"bureaucracy",d:"complicated official rules",s:"There's too much ___ here.",t:3},
+  {w:"questionnaire",d:"a form full of questions",s:"Please fill out the ___.",t:3},
+  {w:"conscientious",d:"careful and thorough",s:"She's a ___ worker.",t:3},
+  {w:"sincerely",d:"honestly; used to end letters",s:"Yours ___, Alex.",t:3},
+  {w:"apologise",d:"to say sorry",s:"We ___ for the delay.",t:3},
+  {w:"enrolment",d:"the act of signing up",s:"___ closes on Friday.",t:3},
+  {w:"catalogue",d:"a list of items",s:"Check the new product ___.",t:3},
+  {w:"recognise",d:"to know who someone is",s:"I didn't ___ him with a beard.",t:3},
+  {w:"theatre",d:"a place to watch plays",s:"We went to the ___.",t:3},
+  {w:"travelling",d:"going from one place to another",s:"I love ___ for work.",t:3},
+  {w:"cancelled",d:"called off",s:"The flight was ___.",t:3},
+  {w:"dialogue",d:"a conversation",s:"Open a ___ with the client.",t:3},
+  {w:"jewellery",d:"rings and necklaces",s:"She wore beautiful ___.",t:3},
+
+  /* TIER 4 */
+  {w:"entrepreneur",d:"someone who starts a business",s:"A young ___ founded the company.",t:4},
+  {w:"liaison",d:"a link between two groups",s:"She's our ___ with the client.",t:4},
+  {w:"noticeable",d:"easy to see or notice",s:"There's a ___ difference now.",t:4},
+  {w:"occurrence",d:"something that happens",s:"It was a rare ___.",t:4},
+  {w:"parallel",d:"side by side, always the same distance apart",s:"Draw two ___ lines.",t:4},
+  {w:"playwright",d:"a person who writes plays",s:"She's a famous ___.",t:4},
+  {w:"pronunciation",d:"the way a word is spoken",s:"Check the ___ in a dictionary.",t:4},
+  {w:"publicly",d:"openly; in front of everyone",s:"He spoke ___ about the issue.",t:4},
+  {w:"supersede",d:"to replace something older",s:"New rules ___ the old ones.",t:4},
+  {w:"twelfth",d:"the number twelve in order",s:"It's the ___ of March.",t:4},
+  {w:"weird",d:"strange; unusual",s:"That's a ___ coincidence.",t:4},
+  {w:"tongue",d:"the organ inside your mouth",s:"Don't bite your ___.",t:4},
+  {w:"rhyme",d:"words that end with the same sound",s:"Find a ___ for 'time'.",t:4},
+  {w:"secretary",d:"a person who handles admin work",s:"Ask the ___ for the file.",t:4},
+  {w:"vacuum",d:"an empty space; to clean with suction",s:"Please ___ the carpet.",t:4},
+  {w:"millennium",d:"a period of one thousand years",s:"A new ___ began in 2000.",t:4},
+  {w:"hierarchy",d:"a system ranked by level",s:"Learn the company ___.",t:4},
+  {w:"indispensable",d:"so useful you can't do without it",s:"He's an ___ colleague.",t:4},
+  {w:"correspondence",d:"letters or emails exchanged",s:"File the business ___.",t:4},
+  {w:"miscellaneous",d:"a mix of different things",s:"Sort the ___ items.",t:4},
+  {w:"accommodation",d:"a place to stay or work from",s:"Book your ___ early.",t:4},
+  {w:"undoubtedly",d:"certainly; without question",s:"She's ___ the best candidate.",t:4},
+  {w:"phenomenon",d:"something that can be observed",s:"It's a strange ___.",t:4},
+  {w:"rhythm",d:"a regular repeated pattern",s:"Keep the same ___ when typing.",t:4}
+];
+
+/* SPANISH HYBRID WORDS (Fallback if AI is off) */
+const SPANISH_WORDS = [
+  {w:"restaurant", es:"El restaurante", d:"a place where you buy meals", s:"Let's try that new ___.", t:3},
+  {w:"office", es:"La oficina", d:"a place where people work", s:"I'll be in the ___ until five.", t:2},
+  {w:"computer", es:"La computadora", d:"an electronic machine for work", s:"Restart your ___.", t:2},
+  {w:"meeting", es:"La reunión", d:"a gathering to discuss something", s:"The ___ starts at nine.", t:2},
+  {w:"document", es:"El documento", d:"a file or written record", s:"Save the ___ before you close it.", t:2},
+  {w:"urgent", es:"Urgente", d:"needing immediate action", s:"This email is ___.", t:2},
+  {w:"client", es:"El cliente", d:"someone who buys services", s:"The ___ is waiting.", t:2},
+  {w:"project", es:"El proyecto", d:"a planned piece of work", s:"We finished the ___.", t:2},
+  {w:"telephone", es:"El teléfono", d:"a device used to call people", s:"Answer the ___, please.", t:2},
+  {w:"important", es:"Importante", d:"of great significance", s:"This is very ___.", t:2},
+  {w:"company", es:"La compañía", d:"a business organisation", s:"I work for a large ___.", t:2},
+  {w:"manager", es:"El gerente", d:"a person in charge of a team", s:"Speak to the ___.", t:2},
+  {w:"information", es:"La información", d:"facts provided about something", s:"I need more ___.", t:2},
+  {w:"problem", es:"El problema", d:"a difficult situation", s:"We have a small ___.", t:2},
+  {w:"solution", es:"La solución", d:"a way to fix a problem", s:"Do you have a ___?", t:2},
+  {w:"communication", es:"La comunicación", d:"the sharing of information", s:"Good ___ is key.", t:2},
+  {w:"public", es:"Público", d:"open for everyone to see", s:"This is a ___ space.", t:2},
+  {w:"service", es:"El servicio", d:"help given to a customer", s:"The ___ is excellent.", t:2},
+  {w:"special", es:"Especial", d:"better or different from normal", s:"Today is a ___ day.", t:2},
+  {w:"possible", es:"Posible", d:"able to be done", s:"Is it ___ to finish today?", t:2},
+  {w:"absolute", es:"Absoluto", d:"complete; total", s:"That's __ nonsense.", t:3},
+  {w:"organise", es:"Organizar", d:"to arrange or plan something", s:"I need to ___ the meeting.", t:2},
+  {w:"favour", es:"El favor", d:"an act of kindness", s:"Could you do me a ___?", t:2}
+];
+
+const TIER_NAMES = {1:"Starter Words", 2:"Workplace Words", 3:"Tricky Words", 4:"Boss Words"};
+
+/* ==========================================================================
+   2. STATE + SAVE
+   ========================================================================== */
+const SAVE_KEY = "spellquest_au_v2";
+const clone = o => JSON.parse(JSON.stringify(o));
+const DEFAULT_STATE = {
+  xp: 0, streak: 0, lastDay: null, sound: true,
+  mastery: {},
+  certified: {},
+  history: [],
+  stats: { correct: 0, attempts: 0, bestCombo: 0 },
+  wordSource: "local",
+  aiPacks: {},
+  aiWordBank: {},
+  wordExplanations: {} // Caches AI explanations
+};
+
+function load(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return clone(DEFAULT_STATE);
+    const merged = Object.assign(clone(DEFAULT_STATE), JSON.parse(raw));
+    if(!Array.isArray(merged.history)) merged.history = [];
+    if(!merged.certified) merged.certified = {};
+    if(!merged.aiPacks) merged.aiPacks = {};
+    if(!merged.aiWordBank) merged.aiWordBank = {};
+    if(!merged.wordExplanations) merged.wordExplanations = {};
+    if(merged.wordSource !== "ai") merged.wordSource = "local";
+    return merged;
+  }catch(e){ return clone(DEFAULT_STATE); }
+}
+let state = load();
+function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){} }
+
+const RANKS = ["Rookie Speller","Word Scout","Letter Ninja","Spell Apprentice","Word Slinger","Grammar Knight","Spell Master","Lexicon Legend","Word Wizard","Grand Speller"];
+function levelInfo(xp){ let lvl = 1, need = 100, acc = 0; while (xp >= acc + need){ acc += need; lvl++; need = Math.round(need * 1.3); } return { lvl, acc, need, into: xp - acc }; }
+const rankFor = lvl => RANKS[Math.min(RANKS.length - 1, Math.floor((lvl - 1) / 2))];
+const masteryOf = w => state.mastery[w] || {s:0, w:0, c:0};
+const masteryScore = w => Math.min(1, (masteryOf(w).s || 0) / 3);
+const masteredCount = () => allWordsPool().filter(x => (masteryOf(x.w).s || 0) >= 3).length;
+const certifiedCount = () => Object.keys(state.certified || {}).length;
+const reviewCount = () => allWordsPool().filter(x => { const m = state.mastery[x.w]; return m && m.w > 0 && (m.s||0) < 3; }).length;
+
+function allWordsPool(){
+  const map = new Map();
+  WORDS.forEach(w => map.set(w.w, { ...w, source: "local" }));
+  Object.values(state.aiWordBank || {}).forEach(w => {
+    if(!map.has(w.w)) map.set(w.w, { ...w, source: "ai" });
+  });
+  return Array.from(map.values());
+}
+
+function weightedSample(pool, n){
+  if(!pool.length) return [];
+  const bag = pool.slice(); const picks = []; const target = Math.min(n, bag.length);
+  while(picks.length < target && bag.length){
+    const weights = bag.map(w => 1 + (1 - masteryScore(w.w)) * 3 + ((w.t || 1) >= 3 ? .5 : 0));
+    const total = weights.reduce((a,b) => a+b, 0);
+    let r = Math.random() * total, idx = bag.length - 1;
+    for(let i=0;i<bag.length;i++){ r -= weights[i]; if(r <= 0){ idx = i; break; } }
+    picks.push(bag.splice(idx, 1)[0]);
+  }
+  return picks;
+}
+
+/* ==========================================================================
+   3. SOUND & SPEECH
+   ========================================================================== */
+let actx = null;
+function initAudio(){ if(!actx){ const AC = window.AudioContext || window.webkitAudioContext; if(AC) actx = new AC(); } if(actx && actx.state === "suspended") actx.resume(); }
+function tone(freq, delay, dur, type="sine", vol=0.15){
+  if(!state.sound) return;
+  initAudio(); if(!actx) return;
+  const t0 = actx.currentTime + delay; const o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(vol, t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(actx.destination); o.start(t0); o.stop(t0 + dur + 0.03);
+}
+const sfx = {
+  correct(combo){ const base = 520 + Math.min(combo, 8) * 45; tone(base, 0, .12, "triangle", .17); tone(base * 1.26, .07, .12, "triangle", .15); tone(base * 1.5, .14, .2, "triangle", .13); },
+  wrong(){ tone(190, 0, .16, "sawtooth", .11); tone(125, .1, .26, "sawtooth", .11); },
+  level(){ [523,659,784,1047,1319].forEach((f,i)=>tone(f, i*.085, .28, "triangle", .15)); },
+  cert(){ [523,659,784,1047,1319,1568].forEach((f,i)=>tone(f, i*.09, .3, "triangle", .16)); },
+  click(){ tone(720, 0, .05, "square", .05); },
+  tick(){ tone(1100, 0, .04, "sine", .05); }
+};
+
+const synth = window.speechSynthesis;
+let chosenVoice = null;
+function pickVoice(){
+  if(!synth) return;
+  const vs = synth.getVoices(); if(!vs.length) return;
+  chosenVoice = vs.find(v => /en-AU/i.test(v.lang) && /female|karen|matilda|google au/i.test(v.name)) || vs.find(v => /en-AU/i.test(v.lang)) || vs.find(v => /en-GB/i.test(v.lang)) || vs.find(v => /en-US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || vs[0];
+}
+if(synth){ pickVoice(); synth.onvoiceschanged = pickVoice; }
+
+function speak(text, rate){
+  if(!synth) return;
+  try{
+    synth.cancel(); 
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = rate || 0.8; u.pitch = 1; u.lang = (chosenVoice && chosenVoice.lang) || "en-AU";
+    if(chosenVoice) u.voice = chosenVoice;
+    synth.speak(u); 
+  }catch(e){}
+}
+
+/* ==========================================================================
+   4. FX & UI HELPERS
+   ========================================================================== */
+const $ = s => document.querySelector(s);
+const fxLayer = $("#fx");
+const PALETTE = ["#7c5cff","#22d3ee","#34d399","#fbbf24","#fb7185","#ffffff"];
+function burst(x, y, n=20){
+  for(let i=0;i<n;i++){
+    const p = document.createElement("div"); p.className = "particle";
+    const a = Math.random() * Math.PI * 2; const dist = 40 + Math.random() * 150; const size = 4 + Math.random() * 8;
+    p.style.cssText = `left:${x}px;top:${y}px;width:${size}px;height:${size}px;background:${PALETTE[(Math.random()*PALETTE.length)|0]};--dx:${Math.cos(a)*dist}px;--dy:${Math.sin(a)*dist}px;`;
+    fxLayer.appendChild(p); setTimeout(()=>p.remove(), 850);
   }
 }
+function burstFromCard(){ const r = $("#promptCard").getBoundingClientRect(); burst(r.left + r.width/2, r.top + r.height/2); }
+function shake(el){ el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); setTimeout(()=>el.classList.remove("shake"), 500); }
+let toastTimer = null;
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"), 2400); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ==========================================================================
+   5. FLOATING CARD (EXPLANATIONS)
+   ========================================================================== */
+async function openWordModal(word){
+  sfx.click();
+  const modal = $("#wordModal");
+  const mWord = $("#mWord"), mDef = $("#mDef"), mRule = $("#mRule"), mMnemonic = $("#mMnemonic");
+  
+  // Find the word object
+  const obj = allWordsPool().find(x => x.w === word);
+  mWord.textContent = word;
+  mDef.textContent = obj ? obj.d : "Unknown word";
+  
+  // Setup speak button
+  $("#mSpeak").onclick = () => speak(word);
+  
+  // Open modal immediately with loading state
+  modal.classList.add("loading");
+  modal.classList.add("open");
+  
+  // Check cache
+  if(state.wordExplanations[word]){
+    mRule.textContent = state.wordExplanations[word].rule;
+    mMnemonic.textContent = state.wordExplanations[word].mnemonic;
+    modal.classList.remove("loading");
+    return;
+  }
+  
+  // Fetch from API
+  try {
+    const r = await fetch("/api/explain-word", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ word })
+    });
+    const data = await r.json();
+    
+    // Save to cache
+    state.wordExplanations[word] = data;
+    save();
+    
+    // Update UI
+    mRule.textContent = data.rule;
+    mMnemonic.textContent = data.mnemonic;
+  } catch(e) {
+    mRule.textContent = "Sorry, couldn't load the rule right now.";
+    mMnemonic.textContent = "Try breaking the word into smaller syllables!";
+  } finally {
+    modal.classList.remove("loading");
+  }
+}
+$("#mClose").addEventListener("click", () => { sfx.click(); $("#wordModal").classList.remove("open"); });
+$("#wordModal").addEventListener("click", (e) => { if(e.target.id === "wordModal") $("#wordModal").classList.remove("open"); });
+
+/* ==========================================================================
+   6. AI WORD PACKS
+   ========================================================================== */
+const AI_PACK_SIZE = 20;
+const AI_PACK_TTL = 12 * 60 * 60 * 1000;
+let aiFetchBusy = false;
+
+function aiPackFresh(tier, bilingual){
+  const key = bilingual ? `es_${tier}` : tier;
+  const p = state.aiPacks[key];
+  if(!p || !Array.isArray(p.words) || p.words.length < 6 || Date.now() - (p.createdAt || 0) > AI_PACK_TTL) return false;
+  return true;
+}
+
+function pruneAIBank(max = 400){
+  const entries = Object.entries(state.aiWordBank).sort((a,b) => (a[1].addedAt || 0) - (b[1].addedAt || 0));
+  const excess = entries.length - max;
+  if(excess > 0) entries.slice(0, excess).forEach(([k]) => delete state.aiWordBank[k]);
+}
+
+async function fetchAIPack(tier, count = AI_PACK_SIZE, bilingual = false){
+  const avoid = Object.keys(state.aiWordBank).slice(-80);
+  const r = await fetch("/api/generate-words", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tier, count, avoid, bilingual }),
+  });
+  if(!r.ok) throw new Error("HTTP " + r.status);
+  const data = await r.json();
+  if(!data.words || !data.words.length) throw new Error("No words");
+
+  data.words.forEach(w => { state.aiWordBank[w.w] = { ...w, source: "ai", addedAt: Date.now() }; });
+  pruneAIBank(400);
+  const key = bilingual ? `es_${tier}` : tier;
+  state.aiPacks[key] = { words: data.words, createdAt: Date.now() };
+  save();
+  return data.words;
+}
+
+async function ensureAIPools(tiers, bilingual){
+  if(aiFetchBusy) throw new Error("Busy");
+  aiFetchBusy = true;
+  try {
+    for(const t of tiers){
+      if(aiPackFresh(t, bilingual)) continue;
+      await fetchAIPack(t, AI_PACK_SIZE, bilingual);
+    }
+  } finally { aiFetchBusy = false; }
+}
+
+function showAILoading(on){ $("#aiLoading").classList.toggle("show", !!on); }
+
+/* ==========================================================================
+   7. SCREENS & HOME
+   ========================================================================== */
+function showScreen(name){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  $("#screen-" + name).classList.add("active");
+  window.scrollTo({ top: 0 });
+}
+
+function updateHUD(){
+  const info = levelInfo(state.xp);
+  $("#lvlBadge").textContent = info.lvl;
+  $("#rankName").textContent = rankFor(info.lvl);
+  $("#xpText").textContent = `${info.into} / ${info.need} XP`;
+  $("#xpFill").style.width = Math.min(100, (info.into / info.need) * 100) + "%";
+  $("#streakNum").textContent = state.streak || 0;
+  $("#soundBtn").textContent = state.sound ? "🔊" : "🔇";
+}
+
+function addXP(n){
+  const before = levelInfo(state.xp).lvl;
+  state.xp = Math.max(0, state.xp + n);
+  const after = levelInfo(state.xp).lvl;
+  updateHUD();
+  if(after > before) showLevelUp(after);
+  save();
+}
+function showLevelUp(lvl){
+  $("#luLevel").textContent = lvl;
+  $("#luRank").textContent = rankFor(lvl);
+  const el = $("#levelup"); el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  sfx.level(); setTimeout(()=>el.classList.remove("show"), 1950);
+}
+function touchStreak(){
+  const today = new Date().toDateString(); if(state.lastDay === today) return;
+  const yest = new Date(Date.now() - 86400000).toDateString();
+  state.streak = (state.lastDay === yest) ? (state.streak || 0) + 1 : 1;
+  state.lastDay = today; save();
+}
+
+const MODES = [
+  { id:"practice", ico:"🌱", name:"Practice",     desc:"No timer, no pressure. Learn the words properly." },
+  { id:"blitz",    ico:"⚡", name:"Blitz",        desc:"Beat the clock. Chain correct answers for combo XP." },
+  { id:"bilingual",ico:"🇪🇸", name:"Bilingual Boss", desc:"See the Spanish word, type the Australian English spelling." },
+  { id:"boss",     ico:"👑", name:"Boss Battle",  desc:"The hardest words. 3 lives. Big rewards." },
+  { id:"mastery",  ico:"🎓", name:"Mastery Test", desc:"No hints, no definitions. Pass 80% to get certified." },
+  { id:"review",   ico:"🔁", name:"Review",       desc:"Drill the words you keep getting wrong." }
+];
+
+function renderHome(){
+  const info = levelInfo(state.xp);
+  $("#sLevel").textContent = info.lvl;
+  const acc = state.stats.attempts ? Math.round(state.stats.correct / state.stats.attempts * 100) : 0;
+  $("#sAcc").textContent = state.stats.attempts ? acc + "%" : "—";
+  $("#sMastered").textContent = masteredCount();
+  $("#sStreak").textContent = state.streak || 0;
+  updateHUD();
+
+  document.querySelectorAll("[data-src]").forEach(btn => { btn.classList.toggle("on", btn.dataset.src === state.wordSource); });
+
+  const statusEl = $("#aiStatus");
+  if(state.wordSource === "ai"){
+    const bank = Object.keys(state.aiWordBank).length;
+    statusEl.innerHTML = `
+      <div class="banner" style="background:rgba(34,211,238,.1);border-color:rgba(34,211,238,.3);color:#67e8f9">
+        ✨ AI mode active — words generated by DeepSeek (${bank} in bank).
+        <button class="ghost-btn" id="refreshAIBtn" style="margin-top:9px;width:100%">🔄 Clear packs &amp; generate fresh</button>
+      </div>`;
+    $("#refreshAIBtn").addEventListener("click", () => { state.aiPacks = {}; save(); renderHome(); toast("AI packs cleared."); });
+  } else { statusEl.innerHTML = ""; }
+
+  const wrap = $("#modes"); wrap.innerHTML = "";
+  MODES.forEach(m => {
+    const btn = document.createElement("button"); btn.className = "mode";
+    let tag = "", locked = false;
+    if(m.id === "review"){ const c = reviewCount(); tag = c ? `<span class="tag">${c} to fix</span>` : ""; if(!c) locked = true; }
+    if(m.id === "mastery"){ const c = masteredCount(); if(c >= 6) tag = `<span class="tag green">${c} ready</span>`; else { tag = `<span class="tag locked">need 6</span>`; locked = true; } }
+    btn.innerHTML = `<span class="ico">${m.ico}</span><span class="txt"><span class="nm">${m.name}</span><span class="ds">${m.desc}</span></span>${tag}`;
+    if(locked) btn.style.opacity = ".45";
+    btn.addEventListener("click", () => {
+      initAudio(); sfx.click();
+      if(m.id === "review" && reviewCount() === 0){ toast("Nothing to review yet!"); return; }
+      if(m.id === "mastery" && masteredCount() < 6){ toast("Master at least 6 words first."); return; }
+      startGame(m.id);
+    });
+    wrap.appendChild(btn);
+  });
+  $("#speechWarn").innerHTML = synth ? "" : `<div class="banner">⚠️ Your browser doesn't support speech. Use Chrome, Edge or Safari.</div>`;
+}
+
+/* ==========================================================================
+   8. GAME ENGINE
+   ========================================================================== */
+let G = null, timerRAF = null, advanceTimer = null;
+const MODE_CFG = {
+  practice: { n:10, lives:Infinity, time:0 },
+  blitz:    { n:12, lives:3,        time:12 },
+  bilingual:{ n:10, lives:3,        time:0 },
+  boss:     { n:10, lives:3,        time:11 },
+  mastery:  { n:10, lives:Infinity, time:0, mastery:true, passMark:80 },
+  review:   { n:10, lives:Infinity, time:0 }
+};
+
+function buildRoundSync(mode, n){
+  if(mode === "bilingual") return weightedSample(SPANISH_WORDS.slice(), n);
+  const all = allWordsPool();
+  if(mode === "mastery") return weightedSample(all.filter(w => (masteryOf(w.w).s || 0) >= 3), n);
+  if(mode === "review"){
+    let pool = all.filter(w => { const m = state.mastery[w.w]; return m && m.w > 0 && (m.s||0) < 3; });
+    if(pool.length < 6) pool = all.filter(w => masteryScore(w.w) < 1);
+    if(pool.length < 6) pool = all.slice();
+    return weightedSample(pool, n);
+  }
+  const tiers = mode === "boss" ? [3,4] : mode === "blitz" ? [2,3] : [1,2];
+  let pool = all.filter(w => tiers.includes(w.t));
+  if(!pool.length) pool = all.slice();
+  return weightedSample(pool, n);
+}
+
+async function buildRoundAI(mode, n){
+  const isBilingual = mode === "bilingual";
+  const tiers = mode === "boss" ? [3,4] : mode === "blitz" ? [2,3] : [1,2];
+  await ensureAIPools(tiers, isBilingual);
+  let pool = [];
+  tiers.forEach(t => {
+    const key = isBilingual ? `es_${t}` : t;
+    const p = state.aiPacks[key];
+    if(p && Array.isArray(p.words)) pool = pool.concat(p.words);
+  });
+  if(pool.length < 6) return buildRoundSync(mode, n);
+  return weightedSample(pool, n);
+}
+
+async function startGame(mode){
+  const cfg = MODE_CFG[mode];
+  const useAI = state.wordSource === "ai" && mode !== "mastery" && mode !== "review";
+
+  let queue;
+  if(useAI){
+    showAILoading(true);
+    try { queue = await buildRoundAI(mode, cfg.n); }
+    catch(e){ queue = buildRoundSync(mode, cfg.n); toast("AI unavailable — using built-in words"); }
+    finally { showAILoading(false); }
+  } else {
+    queue = buildRoundSync(mode, cfg.n);
+  }
+  if(!queue || !queue.length) queue = buildRoundSync("practice", 10);
+
+  touchStreak();
+  G = { mode, cfg, source: state.wordSource, queue, index: 0, lives: cfg.lives, combo: 0, bestCombo: 0, correct: 0, attempts: 0, xpEarned: 0, missed: [], answers: [], answered: false, pendingAdvance: false, current: null, hintCount: 0, timeLeft: 0, timeMax: cfg.time };
+  clearTimeout(advanceTimer); cancelAnimationFrame(timerRAF);
+  showScreen("game"); nextWord();
+}
+
+function renderHearts(){
+  const el = $("#hearts");
+  if(G.cfg.mastery){ el.innerHTML = `<span class="heart-inf">🎓 certification test</span>`; return; }
+  if(!isFinite(G.cfg.lives)){ el.innerHTML = `<span class="heart-inf">🌱 relaxed mode</span>`; return; }
+  let html = ""; for(let i=0;i<G.cfg.lives;i++) html += `<span class="heart ${i < G.lives ? "" : "dead"}">${i < G.lives ? "❤️" : "🖤"}</span>`;
+  el.innerHTML = html;
+}
+function renderCombo(){
+  const el = $("#combo");
+  if(G.combo >= 2){ el.textContent = "🔥 x" + G.combo; el.classList.remove("on"); void el.offsetWidth; el.classList.add("on"); }
+  else { el.classList.remove("on"); }
+}
+
+function startTimer(){
+  cancelAnimationFrame(timerRAF);
+  const fill = $("#timerFill");
+  if(!G.cfg.time){ fill.style.width = "100%"; fill.style.opacity = ".18"; return; }
+  fill.style.opacity = "1";
+  const total = G.cfg.time * 1000; const t0 = performance.now(); let lastWhole = Math.ceil(G.cfg.time);
+  function tick(now){
+    const left = Math.max(0, total - (now - t0)); G.timeLeft = left / 1000;
+    const pct = left / total; fill.style.width = (pct * 100) + "%";
+    fill.style.background = pct > .5 ? "linear-gradient(90deg,#34d399,#22d3ee)" : pct > .25 ? "linear-gradient(90deg,#fbbf24,#f59e0b)" : "linear-gradient(90deg,#fb7185,#ef4444)";
+    const whole = Math.ceil(G.timeLeft); if(whole !== lastWhole){ lastWhole = whole; if(whole <= 3 && whole > 0) sfx.tick(); }
+    if(left <= 0){ onTimeout(); return; }
+    if(!G.answered) timerRAF = requestAnimationFrame(tick);
+  }
+  timerRAF = requestAnimationFrame(tick);
+}
+
+function nextWord(){
+  if(!G) return;
+  if(G.index >= G.queue.length || G.lives <= 0){ endGame(); return; }
+  G.current = G.queue[G.index]; G.answered = false; G.pendingAdvance = false; G.hintCount = 0;
+  const w = G.current;
+  $("#qcount").textContent = `${G.index + 1} / ${G.queue.length}`;
+  $("#pattern").textContent = ""; $("#feedback").innerHTML = ""; $("#promptCard").classList.remove("correct-flash");
+
+  const isMastery = !!G.cfg.mastery;
+  const isBilingual = G.mode === "bilingual";
+
+  if(isMastery){
+    $("#definition").textContent = "🎧 Listen carefully and type the word.";
+    $("#sentence").textContent = "No hints, no definition — this is the real test.";
+    $("#hintBtn").style.display = "none";
+  } else if(isBilingual) {
+    $("#definition").textContent = `🇪🇸 ${w.es || w.w} — ${w.d}`;
+    $("#sentence").textContent = "Type the English spelling.";
+    $("#hintBtn").style.display = "";
+  } else {
+    $("#definition").textContent = w.d;
+    $("#sentence").textContent = w.s || "";
+    $("#hintBtn").style.display = "";
+  }
+
+  const inp = $("#answerInput");
+  inp.disabled = false; inp.value = ""; requestAnimationFrame(() => { inp.value = ""; });
+  $("#submitBtn").disabled = false; $("#hintBtn").disabled = false; $("#skipBtn").disabled = false;
+  renderHearts(); renderCombo();
+
+  if(synth) speak(w.w);
+  else if(!isMastery && !isBilingual){
+    $("#definition").textContent = w.w + " — " + w.d;
+    setTimeout(()=>{ if(G && G.current === w) $("#definition").textContent = w.d; }, 2000);
+  }
+
+  setTimeout(()=>{ if(G && !G.answered) inp.focus(); }, 120);
+  startTimer();
+}
+
+function onTimeout(){ if(!G || G.answered) return; sfx.wrong(); submitAnswer(true); }
+function normalize(s){ return s.toLowerCase().replace(/\s+/g, " ").trim(); }
+
+function submitAnswer(isTimeout){
+  if(!G || G.answered) return;
+  G.answered = true; G.pendingAdvance = false; cancelAnimationFrame(timerRAF);
+
+  const correctWord = G.current.w;
+  const raw = isTimeout ? "" : $("#answerInput").value;
+  $("#answerInput").value = ""; 
+  const ok = normalize(raw) === normalize(correctWord);
+
+  $("#answerInput").disabled = true; $("#submitBtn").disabled = true; $("#hintBtn").disabled = true; $("#skipBtn").disabled = true;
+  G.attempts++; state.stats.attempts++;
+  G.answers.push({ word: correctWord, typed: raw.trim(), ok, timeout: !!isTimeout });
+
+  const m = state.mastery[correctWord] || (state.mastery[correctWord] = {s:0, w:0, c:0});
+
+  if(ok){
+    G.correct++; state.stats.correct++; m.s = (m.s || 0) + 1; m.c = (m.c || 0) + 1;
+    if(m.s === 3 && !G.cfg.mastery) toast(`⭐ "${correctWord}" mastered!`);
+    G.combo++; G.bestCombo = Math.max(G.bestCombo, G.combo);
+    const base = 8 + correctWord.length; const comboMult = 1 + Math.min(G.combo - 1, 10) * 0.1;
+    const speedBonus = G.cfg.time ? Math.round(6 * (G.timeLeft / G.cfg.time)) : 0;
+    const gain = Math.round(base * comboMult) + speedBonus;
+
+    addXP(gain); G.xpEarned += gain;
+    sfx.correct(G.combo); burstFromCard(); $("#promptCard").classList.add("correct-flash");
+
+    const esTip = (G.mode === "bilingual" && G.current.es) ? `<div class="bonus" style="color:#67e8f9">🇪🇸 ${G.current.es}</div>` : "";
+    $("#feedback").innerHTML = `<div class="ok">✅ Correct!</div>${esTip}<div class="bonus">+${gain} XP${speedBonus ? ` (incl. +${speedBonus} speed)` : ""}</div>`;
+    renderCombo(); advance(1200);
+  } else {
+    G.combo = 0; if(isFinite(G.cfg.lives)) G.lives--; m.s = 0; m.w = (m.w || 0) + 1;
+    if(!G.missed.includes(correctWord)) G.missed.push(correctWord);
+    sfx.wrong(); shake(document.body); renderHearts(); renderCombo();
+    $("#feedback").innerHTML = `<div class="bad">${isTimeout ? "⏰ Out of time!" : "❌ Not quite"}</div><div class="ans">${correctWord}</div>${raw.trim() ? `<div class="you">you wrote: ${raw.trim()}</div>` : ""}`;
+    if(synth) setTimeout(()=>speak(correctWord, 0.7), 350);
+    advance(2100);
+  }
+  save();
+}
+
+function advance(ms){
+  clearTimeout(advanceTimer); G.pendingAdvance = true;
+  advanceTimer = setTimeout(()=>{ if(!G) return; G.pendingAdvance = false; G.index++; nextWord(); }, ms);
+}
+
+function skipWord(){
+  if(!G || G.answered) return;
+  G.answered = true; cancelAnimationFrame(timerRAF); G.combo = 0;
+  const w = G.current.w;
+  if(!G.missed.includes(w)) G.missed.push(w);
+  G.attempts++; state.stats.attempts++;
+  G.answers.push({ word: w, typed: "", ok: false, timeout: false, skipped: true });
+  const m = state.mastery[w] || (state.mastery[w] = {s:0, w:0, c:0}); m.s = 0; m.w = (m.w || 0) + 1;
+  $("#feedback").innerHTML = `<div class="bad">⏭ Skipped</div><div class="ans">${w}</div>`;
+  if(synth) speak(w, .7); save(); advance(1400); 
+}
+
+function useHint(){
+  if(!G || G.answered) return;
+  const w = G.current.w; if(G.hintCount >= w.length) return;
+  G.hintCount++; addXP(-5); sfx.click();
+  $("#pattern").textContent = w.split("").map((ch, i) => i < G.hintCount ? ch : "·").join(" ");
+  $("#answerInput").focus();
+}
+
+/* ==========================================================================
+   9. END OF ROUND (AND RESULTS UI)
+   ========================================================================== */
+function endGame(){
+  cancelAnimationFrame(timerRAF); clearTimeout(advanceTimer); if(!G) return;
+  const acc = G.attempts ? Math.round((G.correct / G.attempts) * 100) : 0;
+  const isMastery = !!G.cfg.mastery; const passMark = G.cfg.passMark || 80;
+
+  let newlyCertified = [];
+  if(isMastery){
+    if(acc >= passMark){ G.answers.forEach(a => { if(a.ok && !state.certified[a.word]){ state.certified[a.word] = new Date().toISOString(); newlyCertified.push(a.word); } }); }
+    else { G.missed.forEach(w => { const m = state.mastery[w]; if(m) m.s = 1; }); }
+  }
+  state.stats.bestCombo = Math.max(state.stats.bestCombo || 0, G.bestCombo);
+
+  const entry = { id: Date.now() + "-" + Math.random().toString(36).slice(2, 7), date: new Date().toISOString(), mode: G.mode, source: G.source || "local", correct: G.correct, attempts: G.attempts, accuracy: acc, xpEarned: G.xpEarned, bestCombo: G.bestCombo, missed: G.missed.slice(), answers: G.answers.slice(), pass: isMastery ? (acc >= passMark) : null, newlyCertified: newlyCertified.slice() };
+  state.history.push(entry); save();
+
+  let grade, title, sub;
+  if(isMastery){
+    if(acc >= passMark){ grade = "🎓"; title = "Certified!"; sub = newlyCertified.length ? `${newlyCertified.length} word${newlyCertified.length>1?"s":""} stamped as certified.` : "You passed — you're already certified."; sfx.cert(); }
+    else { grade = "📘"; title = "Not yet"; sub = `You need ${passMark}% to pass. Missed words are back in your learning pool.`; }
+  } else if(G.lives <= 0){ grade = "💔"; title = "Out of lives!"; sub = "You'll get them next time — review the words below."; }
+  else if(acc >= 95){ grade = "S"; title = "Flawless!"; sub = "Practically a dictionary."; }
+  else if(acc >= 85){ grade = "A"; title = "Excellent!"; sub = "Your spelling is getting sharp."; }
+  else if(acc >= 70){ grade = "B"; title = "Nice work!"; sub = "Solid round — a few words to lock in."; }
+  else if(acc >= 50){ grade = "C"; title = "Good effort"; sub = "Every mistake is a word you're about to learn."; }
+  else { grade = "D"; title = "Keep going"; sub = "Progress beats perfect. Try Practice mode next."; }
+
+  $("#grade").textContent = grade; $("#resultTitle").textContent = title; $("#resultSub").textContent = sub;
+  $("#resultSource").textContent = isMastery ? "Certification test — words from your mastered pool." : (G.source === "ai" ? "✨ Words generated by DeepSeek AI" : "📚 Built-in word pack");
+  $("#rXP").textContent = G.xpEarned; $("#rAcc").textContent = acc + "%"; $("#rCombo").textContent = G.bestCombo;
+
+  const ms = $("#missedSection");
+  if(G.missed.length){
+    ms.innerHTML = `<h2 class="sec-title">Words to review (tap to learn)</h2><div class="missed-list">` +
+      G.missed.map(w => { const obj = allWordsPool().find(x => x.w === w); return `<div class="missed-item" onclick="openWordModal('${w}')"><span class="w">${w}</span><span class="d">${obj ? obj.d : ""}</span></div>`; }).join("") + `</div>`;
+  } else {
+    ms.innerHTML = `<div class="banner" style="background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);color:#34d399">🎉 Perfect round — no mistakes to review!</div>`;
+  }
+
+  const ab = $("#answerBreakdown");
+  if(G.answers.length){
+    ab.innerHTML = `<h2 class="sec-title">Full breakdown (tap to learn)</h2><div class="breakdown">` +
+      G.answers.map(a => {
+        const label = a.ok ? "✓" : "✗";
+        const typedTxt = a.ok ? "" : a.timeout ? "(out of time)" : a.skipped ? "(skipped)" : `you typed: <s>${escapeHtml(a.typed) || "(blank)"}</s>`;
+        return `<div class="bd-row ${a.ok?'ok':'bad'}" onclick="openWordModal('${a.word}')"><span class="bd-mark">${label}</span><span class="bd-word">${a.word}</span><span class="bd-typed">${typedTxt}</span></div>`;
+      }).join("") + `</div>`;
+  } else { ab.innerHTML = ""; }
+
+  $("#reviewMissedBtn").style.display = G.missed.length ? "block" : "none";
+  const wasAISource = G.source === "ai" && !isMastery;
+  $("#refreshFromResultsBtn").style.display = wasAISource ? "block" : "none";
+
+  const lastMode = G.mode; G = null; showScreen("results");
+  $("#playAgainBtn").onclick = () => { sfx.click(); startGame(lastMode); };
+  $("#reviewMissedBtn").onclick = () => { sfx.click(); startGame("review"); };
+  $("#refreshFromResultsBtn").onclick = async () => { state.aiPacks = {}; save(); toast("Asking DeepSeek for new words…"); sfx.click(); startGame(lastMode); };
+}
+
+/* ==========================================================================
+   10. WORDBOOK & PROGRESS
+   ========================================================================== */
+let wbFilter = "all";
+function masteryPips(w){ const m = masteryOf(w); const s = m.s || 0; let pips = ""; for(let i=0;i<3;i++){ pips += `<span class="pip ${i < s ? "on" : (m.w > 0 && i === 0 && s === 0 ? "bad" : "")}"></span>`; } return pips; }
+
+function renderWordbook(){
+  const list = $("#wordList");
+  const cert = w => state.certified[w] ? `<span class="cert-badge" title="Certified">🎓</span>` : "";
+  const matches = w => { const s = masteryOf(w.w).s || 0; if(wbFilter === "mastered") return s >= 3; if(wbFilter === "learning") return s < 3; return true; };
+
+  let html = "";
+  [1,2,3,4].forEach(t => {
+    const words = WORDS.filter(w => w.t === t).filter(matches);
+    if(!words.length) return;
+    html += `<div class="tier-h">${TIER_NAMES[t]} · ${words.length}</div>`;
+    words.forEach(w => { html += `<div class="word-row" onclick="openWordModal('${w.w}')"><span class="w">${w.w}</span><span class="d">${w.d}</span><span class="pips">${masteryPips(w.w)}</span>${cert(w.w)}</div>`; });
+  });
+
+  const aiWords = Object.values(state.aiWordBank || {}).filter(matches);
+  if(aiWords.length){
+    html += `<div class="tier-h">✨ AI Words · ${aiWords.length}</div>`;
+    aiWords.forEach(w => { html += `<div class="word-row" onclick="openWordModal('${w.w}')"><span class="w">${w.w}</span><span class="d">${w.d}</span><span class="pips">${masteryPips(w.w)}</span>${cert(w.w)}</div>`; });
+  }
+  list.innerHTML = html || `<div class="banner">No words here yet. Play a round!</div>`;
+}
+
+function renderProgress(){
+  const totalRounds = state.history.length;
+  const totalCorrect = state.history.reduce((a,h) => a + h.correct, 0);
+  const totalAttempts = state.history.reduce((a,h) => a + h.attempts, 0);
+  const overallAcc = totalAttempts ? Math.round(totalCorrect / totalAttempts * 100) : 0;
+  const aiRounds = state.history.filter(h => h.source === "ai").length;
+  $("#progressStats").innerHTML = `
+    <div class="stat"><div class="v">${totalRounds}</div><div class="k">Rounds</div></div>
+    <div class="stat"><div class="v">${overallAcc}%</div><div class="k">Overall acc.</div></div>
+    <div class="stat"><div class="v">${masteredCount()}</div><div class="k">Mastered</div></div>
+    <div class="stat"><div class="v">${aiRounds}</div><div class="k">AI rounds</div></div>`;
+
+  const list = $("#historyList");
+  if(!state.history.length){ list.innerHTML = `<div class="banner">No rounds yet — your permanent record starts after your first game.</div>`; return; }
+
+  const items = state.history.slice().reverse();
+  list.innerHTML = `<h2 class="sec-title">All rounds (${items.length})</h2>` + items.map(h => {
+    const d = new Date(h.date);
+    const dateStr = d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) + " · " + d.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"});
+    const mode = MODES.find(m => m.id === h.mode); const icon = mode ? mode.ico : "❓"; const name = mode ? mode.name : h.mode;
+    const passTag = h.pass === true ? " · 🎓 passed" : h.pass === false ? " · ✗ failed" : "";
+    const srcTag = h.source === "ai" ? " · ✨" : "";
+    const accColor = h.accuracy >= 80 ? "#34d399" : h.accuracy >= 50 ? "#fbbf24" : "#fb7185";
+    const answerChips = h.answers.map(a => `<span class="hist-ans ${a.ok?'ok':'bad'}" title="${escapeHtml(a.typed || (a.skipped?'(skipped)':a.timeout?'(out of time)':'—'))}">${a.word} ${a.ok?'✓':'✗'}</span>`).join("");
+    return `<details class="hist-card"><summary><span class="hist-ico">${icon}</span><span class="hist-main"><span class="hist-mode">${name}${passTag}${srcTag}</span><span class="hist-date">${dateStr}</span></span><span class="hist-acc" style="color:${accColor}">${h.accuracy}%</span></summary><div class="hist-body"><div class="hist-stats"><span>✅ ${h.correct}/${h.attempts}</span><span>⭐ ${h.xpEarned} XP</span><span>🔥 best x${h.bestCombo}</span>${h.newlyCertified && h.newlyCertified.length ? `<span style="color:#34d399">🎓 +${h.newlyCertified.length} certified</span>` : ""}</div><div class="hist-answers">${answerChips}</div></div></details>`;
+  }).join("");
+}
+
+/* ==========================================================================
+   11. EVENT WIRING & INIT
+   ========================================================================== */
+$("#soundBtn").addEventListener("click", () => { state.sound = !state.sound; save(); updateHUD(); if(state.sound){ initAudio(); sfx.click(); } });
+$("#teacherBtn").addEventListener("click", () => { sfx.click(); showScreen("teacher"); });
+$("#backHomeFromTeacher").addEventListener("click", () => { sfx.click(); renderHome(); showScreen("home"); });
+$("#wordbookBtn").addEventListener("click", () => { sfx.click(); renderWordbook(); showScreen("words"); });
+$("#progressBtn").addEventListener("click", () => { sfx.click(); renderProgress(); showScreen("progress"); });
+$("#backHomeBtn").addEventListener("click", () => { sfx.click(); renderHome(); showScreen("home"); });
+$("#backHomeFromProgress").addEventListener("click", () => { sfx.click(); renderHome(); showScreen("home"); });
+$("#homeBtn").addEventListener("click", () => { sfx.click(); renderHome(); showScreen("home"); });
+$("#progressFromResultsBtn").addEventListener("click", () => { sfx.click(); renderProgress(); showScreen("progress"); });
+
+$("#resetBtn").addEventListener("click", () => {
+  if(confirm("Reset ALL progress, mastery, certifications, AI cache and permanent history? This cannot be undone.")){
+    state = clone(DEFAULT_STATE); save(); renderHome(); updateHUD(); toast("Progress reset. Fresh start! 🌱");
+  }
+});
+
+document.querySelectorAll("[data-src]").forEach(btn => {
+  btn.addEventListener("click", () => { state.wordSource = btn.dataset.src; save(); renderHome(); sfx.click(); if(btn.dataset.src === "ai") toast("AI mode on — first round will fetch words."); });
+});
+document.querySelectorAll("[data-f]").forEach(btn => {
+  btn.addEventListener("click", () => { document.querySelectorAll("[data-f]").forEach(b => b.classList.remove("on")); btn.classList.add("on"); wbFilter = btn.dataset.f; renderWordbook(); sfx.click(); });
+});
+
+$("#speakerBtn").addEventListener("click", () => { if(G && G.current) speak(G.current.w); });
+$("#hearBtn").addEventListener("click", () => { if(G && G.current) speak(G.current.w, 0.7); sfx.click(); });
+$("#hintBtn").addEventListener("click", useHint);
+$("#skipBtn").addEventListener("click", skipWord);
+$("#submitBtn").addEventListener("click", () => submitAnswer(false));
+
+$("#answerInput").addEventListener("keydown", e => {
+  if(e.key !== "Enter") return; e.preventDefault(); e.stopPropagation();
+  if(!G) return;
+  if(G.pendingAdvance){ clearTimeout(advanceTimer); G.pendingAdvance = false; G.index++; nextWord(); }
+  else if(!G.answered){ submitAnswer(false); }
+});
+document.addEventListener("keydown", e => {
+  if(e.key !== "Enter") return; if(!G || !G.pendingAdvance) return;
+  clearTimeout(advanceTimer); G.pendingAdvance = false; G.index++; nextWord();
+});
+document.addEventListener("pointerdown", initAudio, { once: true });
+
+renderHome(); updateHUD();
+</script>
+</body>
+</html>
