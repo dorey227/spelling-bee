@@ -21,7 +21,7 @@
   }
   .wrap{max-width:720px;margin:0 auto;padding:14px 16px 70px}
 
-  /* FIXED BACK BUTTON & VERSION */
+  /* FIXED BACK BUTTON */
   #globalBackBtn {
     position:fixed; top:16px; right:16px; z-index:9999;
     background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
@@ -32,10 +32,12 @@
   }
   #globalBackBtn:hover{background:rgba(255,255,255,.2)}
   #globalBackBtn:active{transform:scale(.95)}
+
+  /* MOVED VERSION TAG */
   .version-tag {
-    position:absolute; top:24px; left:16px; font-size:11px; font-weight:800;
-    color:#8f8fb8; letter-spacing:1px; background:rgba(255,255,255,.05);
-    padding:4px 8px; border-radius:8px;
+    text-align:center; font-size:11px; font-weight:800;
+    color:#8f8fb8; letter-spacing:1px; margin-top:24px; padding-bottom:8px;
+    opacity:0.6;
   }
 
   .hud{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:8px 0 18px}
@@ -67,7 +69,6 @@
   .stat .k{font-size:10.5px;color:#8f8fb8;text-transform:uppercase;letter-spacing:.7px;margin-top:3px;font-weight:700}
   .sec-title{font-size:13px;text-transform:uppercase;letter-spacing:1.4px;color:#8f8fb8;margin:0 0 12px;font-weight:800}
 
-  /* INDUSTRY SELECTOR */
   .industry-box{background:rgba(34,211,238,.05);border:1px solid rgba(34,211,238,.2);border-radius:16px;padding:14px;margin-bottom:16px;display:none}
   .industry-box.show{display:block}
   .industry-label{font-size:12px;font-weight:800;color:#67e8f9;margin-bottom:8px;display:block}
@@ -260,8 +261,7 @@
 <button id="globalBackBtn" onclick="handleGlobalBack()">← Exit</button>
 
 <div class="wrap">
-  <header class="hud" style="position:relative">
-    <div class="version-tag" id="versionTag">v3.0.1</div>
+  <header class="hud">
     <div class="lvl">
       <div class="lvl-badge" id="lvlBadge">1</div>
       <div class="xp">
@@ -320,6 +320,9 @@
       <button class="btn ghost" id="wordbookBtn">📖 Open Wordbook</button>
       <button class="btn ghost" id="progressBtn">📊 View Progress</button>
       <button class="btn ghost danger" id="resetBtn">Reset all progress</button>
+      
+      <!-- MOVED VERSION TAG -->
+      <div class="version-tag" id="versionTag">v3.0.2</div>
     </section>
 
     <!-- TEACHER -->
@@ -490,7 +493,7 @@
 /* ==========================================================================
    1. DATA & CONSTANTS
    ========================================================================== */
-const APP_VERSION = "3.0.1";
+const APP_VERSION = "3.0.2";
 const WORDS = [
   {w:"friend",d:"a person you like and know well",s:"She's been my best ___ since school.",t:1},
   {w:"because",d:"for the reason that",s:"I was late ___ the bus broke down.",t:1},
@@ -667,10 +670,7 @@ const DEFAULT_STATE = {
 
 function load(){
   try{
-    // 1. Try to load the permanent save
     let raw = localStorage.getItem(PERMANENT_SAVE_KEY);
-    
-    // 2. If it doesn't exist, check older version keys and migrate them!
     if (!raw) {
       const oldKeys = ["spellquest_au_v3", "spellquest_au_v2", "spellquest_au_v1", "spellquest_v2", "spellquest_v1"];
       for (const oldKey of oldKeys) {
@@ -682,7 +682,6 @@ function load(){
         }
       }
     }
-
     if(!raw) return clone(DEFAULT_STATE);
     const merged = Object.assign(clone(DEFAULT_STATE), JSON.parse(raw));
     if(!Array.isArray(merged.history)) merged.history = [];
@@ -728,7 +727,7 @@ function weightedSample(pool, n){
 }
 
 /* ==========================================================================
-   3. SOUND & SPEECH
+   3. PREMIUM SOUND & SPEECH
    ========================================================================== */
 let actx = null;
 function initAudio(){ if(!actx){ const AC = window.AudioContext || window.webkitAudioContext; if(AC) actx = new AC(); } if(actx && actx.state === "suspended") actx.resume(); }
@@ -740,7 +739,35 @@ function tone(freq, delay, dur, type="sine", vol=0.15){
   o.connect(g); g.connect(actx.destination); o.start(t0); o.stop(t0 + dur + 0.03);
 }
 const sfx = {
-  correct(combo){ const base = 520 + Math.min(combo, 8) * 45; tone(base, 0, .12, "triangle", .17); tone(base * 1.26, .07, .12, "triangle", .15); tone(base * 1.5, .14, .2, "triangle", .13); },
+  correct(combo){
+    // Premium dopamine hit: a crisp C major chord with a quick high arpeggio
+    const base = 523.25; // C5
+    const offset = Math.min(combo, 5) * 0.02; // speeds up slightly with combo
+    
+    // 1. Quick bright pluck
+    tone(base, 0, 0.15, "sine", 0.2);
+    tone(base * 1.25, 0.04, 0.2, "triangle", 0.15); // E5
+    tone(base * 1.5, 0.08, 0.3, "sine", 0.1); // G5
+    
+    // 2. Sparkle echo
+    tone(base * 2, 0.12, 0.4, "sine", 0.05);
+  },
+  mastered(){
+    // Big jackpot dopamine hit: Rapid 7-note ascending arpeggio + sparkle
+    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98, 2093.00];
+    notes.forEach((freq, i) => {
+      // Main note
+      tone(freq, i * 0.06, 0.3, "triangle", 0.15);
+      // Harmonic shimmer (octave up)
+      tone(freq * 2, i * 0.06 + 0.02, 0.2, "sine", 0.06);
+    });
+    // Final triumphant chord
+    setTimeout(() => {
+      tone(1046.50, 0, 0.8, "sine", 0.2); // C6
+      tone(1318.51, 0, 0.8, "triangle", 0.15); // E6
+      tone(1567.98, 0.05, 0.8, "sine", 0.15); // G6
+    }, notes.length * 0.06);
+  },
   wrong(){ tone(190, 0, .16, "sawtooth", .11); tone(125, .1, .26, "sawtooth", .11); },
   level(){ [523,659,784,1047,1319].forEach((f,i)=>tone(f, i*.085, .28, "triangle", .15)); },
   cert(){ [523,659,784,1047,1319,1568].forEach((f,i)=>tone(f, i*.09, .3, "triangle", .16)); },
@@ -855,7 +882,6 @@ const MODES = [
 ];
 
 function renderHome(){
-  $("#versionTag").textContent = "v" + APP_VERSION;
   const info = levelInfo(state.xp);
   $("#sLevel").textContent = info.lvl;
   const acc = state.stats.attempts ? Math.round(state.stats.correct / state.stats.attempts * 100) : 0;
@@ -864,11 +890,9 @@ function renderHome(){
   $("#sStreak").textContent = state.streak || 0;
   updateHUD();
 
-  // Source toggles
   document.querySelectorAll("[data-src]").forEach(btn => { btn.classList.toggle("on", btn.dataset.src === state.wordSource); });
   $("#industryBox").classList.toggle("show", state.wordSource === "ai");
 
-  // Industry logic
   if(state.wordSource === "ai"){
     document.querySelectorAll(".ind-btn").forEach(btn => { btn.classList.toggle("on", btn.dataset.ind === state.industry); });
     $("#indCustom").value = state.customIndustry || "";
@@ -877,7 +901,6 @@ function renderHome(){
     $("#aiStatus").innerHTML = "";
   }
 
-  // Modes
   const wrap = $("#modes"); wrap.innerHTML = "";
   MODES.forEach(m => {
     const btn = document.createElement("button"); btn.className = "mode";
@@ -1082,14 +1105,24 @@ function submitAnswer(isTimeout){
 
   if(ok){
     G.correct++; state.stats.correct++; m.s = (m.s || 0) + 1; m.c = (m.c || 0) + 1;
-    if(m.s === 3 && !G.cfg.mastery) toast(`⭐ "${correctWord}" mastered!`);
+    
+    // Check for Mastery (3 in a row) and play the special sound
+    const isNewlyMastered = (m.s === 3 && !G.cfg.mastery);
+    
+    if(isNewlyMastered) {
+      toast(`⭐ "${correctWord}" mastered!`);
+      sfx.mastered();
+    } else {
+      sfx.correct(G.combo);
+    }
+
     G.combo++; G.bestCombo = Math.max(G.bestCombo, G.combo);
     const base = 8 + correctWord.length; const comboMult = 1 + Math.min(G.combo - 1, 10) * 0.1;
     const speedBonus = G.cfg.time ? Math.round(6 * (G.timeLeft / G.cfg.time)) : 0;
     const gain = Math.round(base * comboMult) + speedBonus;
 
     addXP(gain); G.xpEarned += gain;
-    sfx.correct(G.combo); burstFromCard(); $("#promptCard").classList.add("correct-flash");
+    burstFromCard(); $("#promptCard").classList.add("correct-flash");
 
     const esTip = (G.mode === "bilingual" && G.current.es) ? `<div class="bonus" style="color:#67e8f9">🇪🇸 ${G.current.es}</div>` : "";
     $("#feedback").innerHTML = `<div class="ok">✅ Correct!</div>${esTip}<div class="bonus">+${gain} XP${speedBonus ? ` (incl. +${speedBonus} speed)` : ""}</div>`;
