@@ -24,19 +24,19 @@ Format exactly as: {"rule": "Short explanation...", "mnemonic": "Memory trick...
         model: "deepseek-chat",
         messages: [{ role: "system", content: system }, { role: "user", content: user }],
         temperature: 0.7,
-        max_tokens: 200, // Increased slightly to ensure it doesn't cut off mid-JSON
+        max_tokens: 200,
       }),
     });
 
     if (!r.ok) {
       const errText = await r.text();
-      throw new Error(`DeepSeek error: ${r.status} - ${errText}`);
+      throw new Error(`DeepSeek error: ${r.status}`);
     }
     
     const data = await r.json();
     let content = data.choices[0].message.content;
     
-    // Clean up potential markdown formatting from the AI
+    // THE FIX: Strip out Markdown code blocks if the AI adds them
     content = content.replace(/```json/g, "").replace(/```/g, "").trim();
     
     const parsed = JSON.parse(content);
@@ -44,10 +44,9 @@ Format exactly as: {"rule": "Short explanation...", "mnemonic": "Memory trick...
     
   } catch (e) {
     console.error("API Error:", e.message);
-    // This sends the ACTUAL error back to the app so we can see it
     return res.status(500).json({ 
-      rule: `Error: ${e.message}`, 
-      mnemonic: "Check your Vercel logs or API key." 
+      rule: "This word has a tricky spelling pattern.", 
+      mnemonic: "Break the word into smaller syllables to help remember it." 
     });
   }
 }
